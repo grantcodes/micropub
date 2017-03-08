@@ -19,6 +19,7 @@ The library is setup as an es6 class, and is initalized by passinging an object 
       clientId: 'https://mymicropubclientapp.com',
       redirectUri: 'https://mymicropubclientapp.com/indieauthhandler',
       me: 'https://userindiewebsite.com',
+      state: 'This should be secret or randomly generated per user',
     });
 
 If you already have other information stored such as the token and micropub endpoint you want to use you can also pass those in. The available options are:
@@ -26,6 +27,7 @@ If you already have other information stored such as the token and micropub endp
 - `me` - The url of the user you are authenticating with
 - `clientId` - The url of your micropub client
 - `redirectUri` - The redirect url of your micropub client from indieauth. This is the page where you will get the code to exchange for an access token.
+- `state` - A custom identifier to validate a response from the auth endpoint
 - `scope` - The scope of the micropub client. Defaults to "post create delete update"
 - `token` - The authorization token
 - `authEndpoint` - The authorization endpoint

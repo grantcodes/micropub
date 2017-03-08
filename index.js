@@ -1,11 +1,10 @@
 'use strict';
 
 require('isomorphic-fetch');
-const qs = require('querystring');
-const FormData = require('isomorphic-form-data');
+const qs = require('qs');
+const FormData = require('form-data');
 // const Microformats = require('microformat-shiv');
 const Microformats = require('microformat-node');
-// const objectToFormData = require('./lib/object-to-form-data');
 
 const defaultSettings = {
   me: '',
@@ -25,7 +24,7 @@ class Micropub {
     this.update = this.update.bind(this);
     this.delete = this.delete.bind(this);
     this.undelete = this.undelete.bind(this);
-    this.postJson = this.postJson.bind(this);
+    this.postMicropub = this.postMicropub.bind(this);
     this.checkRequiredOptions = this.checkRequiredOptions.bind(this);
     this.getAuthUrl = this.getAuthUrl.bind(this);
     this.getEndpointsFromUrl = this.getEndpointsFromUrl.bind(this);
@@ -63,22 +62,17 @@ class Micropub {
       // Fetch the given url
       fetch(url)
         .then((res) => res.text())
-        .then((html, second) => {
-          console.log('got html');
-          console.log(html);
-          console.log(second);
+        .then((html) => {
           // Parse the microformats data
           Microformats.get({
             html: html,
           }, (err, mfData) => {
             if (err) {
-              console.log(err);
               reject('Error parsing microformats data');
             }
 
             // Save necessary endpoints.
             if (mfData && mfData.rels && mfData.rels.authorization_endpoint && mfData.rels.token_endpoint && mfData.rels.micropub) {
-              // console.log(mfData);
               this.options.me = url;
               this.options.authEndpoint = mfData.rels.authorization_endpoint[0];
               this.options.tokenEndpoint = mfData.rels.token_endpoint[0];
@@ -105,35 +99,66 @@ class Micropub {
         reject('Missing required options: ' + requirements.missing.join(', '));
       }
 
+      const data = {
+        grant_type: 'authorization_code',
+        me: this.options.me,
+        code: code,
+        scope: this.options.scope,
+        client_id: this.options.clientId,
+        redirect_uri: this.options.redirectUri,
+      };
+
       let form = new FormData();
+      form.append('grant_type', 'authorization_code');
       form.append('me', this.options.me);
       form.append('code', code);
-      form.append('scope', 'post');
+      form.append('scope', this.options.scope);
       form.append('client_id', this.options.clientId);
       form.append('redirect_uri', this.options.redirectUri);
 
       const request = {
         method: 'POST',
         body: form,
-        headers: new Headers({
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-        }),
+        // body: JSON.stringify(data),
+        // headers: new Headers({
+        //   'Content-Type': 'application/json',
+        //   'Accept': 'application/json',
+        // }),
         // mode: 'cors',
       };
-
+      // This could maybe use the postMicropub method
       fetch(this.options.tokenEndpoint, request)
-        .then((res) => res.text())
-        .then((data) => {
+        .then((res) => {
+          const contentType = res.headers.get('Content-Type');
+          if (contentType.indexOf('application/json') === 0) {
+            return res.json()
+          } else {
+            return res.text();
+          }
+        })
+        .then((result) => {
           // Parse the response from the indieauth server
-          const result = qs.parse(data);
+          if (typeof result === 'string') {
+            result = qs.parse(result);
+          }
+          if (result.error_description) {
+            reject(result.error_description);
+          } else if (result.error) {
+            reject(result.error);
+          }
+          if (!result.me || !result.scope || !result.access_token) {
+            reject('The token endpoint did not return the expected parameters');
+          }
           // Check me is the same (removing any trailing slashes)
-          if (result.me.replace(/\/+$/, '') !== this.options.me.replace(/\/+$/, '')) {
+          if (result.me && result.me.replace(/\/+$/, '') !== this.options.me.replace(/\/+$/, '')) {
             reject('The me values did not match');
           }
-          // Check scope matches
-          if (result.scope !== this.options.scope) {
-            reject('The scope values did not match');
-          }
+          // Check scope matches (not reliable)
+          // console.log(result.scope);
+          // console.log(this.options.scope);
+          // if (result.scope && result.scope !== this.options.scope) {
+          //   reject('The scope values did not match');
+          // }
           // Successfully got the token
           this.options.token = result.access_token;
           fulfill(result.access_token);
@@ -148,13 +173,13 @@ class Micropub {
    */
   getAuthUrl() {
     return new Promise((fulfill, reject) => {
-      let requirements = this.checkRequiredOptions(['me']);
+      let requirements = this.checkRequiredOptions(['me', 'state']);
       if (!requirements.pass) {
         reject('Missing required options: ' + requirements.missing.join(', '));
       }
       this.getEndpointsFromUrl(this.options.me)
         .then(() => {
-          let requirements = this.checkRequiredOptions(['me', 'scope', 'clientId', 'redirectUri']);
+          let requirements = this.checkRequiredOptions(['me', 'state', 'scope', 'clientId', 'redirectUri']);
           if (!requirements.pass) {
             reject('Missing required options: ' + requirements.missing.join(', '));
           }
@@ -164,6 +189,7 @@ class Micropub {
             redirect_uri: this.options.redirectUri,
             response_type: 'code',
             scope: this.options.scope,
+            state: this.options.state,
           };
 
           fulfill(this.options.authEndpoint + '?' + qs.stringify(authParams));
@@ -172,50 +198,59 @@ class Micropub {
     });
   }
 
-  create(post) {
-    return this.postJson(post);
+  create(post, type = 'json') {
+    return this.postMicropub(post, type);
   }
 
   update(url, update) {
-    return this.postJson(Object.assign({
+    return this.postMicropub(Object.assign({
       action: 'update',
       url: url,
     }), update);
   }
 
   delete(url) {
-    return this.postJson({
+    return this.postMicropub({
       action: 'delete',
       url: url,
     })
   }
 
   undelete(url) {
-    return this.postJson({
+    return this.postMicropub({
       action: 'undelete',
       url: url,
     })
   }
 
-  postJson(object) {
+  postMicropub(object, type = 'json') {
     return new Promise((fulfill, reject) => {
       const requirements = this.checkRequiredOptions(['token', 'micropubEndpoint']);
       if (!requirements.pass) {
         reject('Missing required options: ' + requirements.missing.join(', '));
       }
 
+
+
       let request = {
         method: 'POST',
-        body: JSON.stringify(object),
-        // mode: 'no-cors',
-        // mode: 'cors',
-        headers: new Headers({
+      };
+
+      if (type == 'json') {
+        request.body = JSON.stringify(object);
+        request.headers = new Headers({
           'Authorization': 'Bearer ' + this.options.token,
           'Content-Type': 'application/json',
-          // 'Accept': 'application/json, text/plain, */*',
           'Accept': 'application/json',
-        })
-      };
+        });
+      } else if (type == 'form') {
+        request.body = qs.stringify(object);
+        request.headers = new Headers({
+          'Authorization': 'Bearer ' + this.options.token,
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          'Accept': 'application/json',
+        });
+      }
 
       fetch(this.options.micropubEndpoint, request)
         .then((res) => {

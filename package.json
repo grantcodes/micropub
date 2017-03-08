@@ -1,14 +1,15 @@
 {
   "name": "micropub",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A simple micropub helper",
   "main": "index.js",
   "author": "Grant Richmond <mail@grant.codes>",
   "license": "MIT",
   "dependencies": {
+    "form-data": "^2.1.2",
     "isomorphic-fetch": "^2.2.1",
-    "isomorphic-form-data": "^0.0.1",
     "microformat-node": "^2.0.1",
-    "microformat-shiv": "^2.0.3"
+    "microformat-shiv": "^2.0.3",
+    "qs": "^6.4.0"
   }
 }
