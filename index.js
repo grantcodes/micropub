@@ -5,6 +5,7 @@ const qs = require('qs');
 const FormData = require('form-data');
 // const Microformats = require('microformat-shiv');
 const Microformats = require('microformat-node');
+const objectToFormData = require('./lib/object-to-form-data');
 
 const defaultSettings = {
   me: '',
@@ -250,6 +251,13 @@ class Micropub {
           'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
           'Accept': 'application/json',
         });
+      } else if (type == 'multipart') {
+        request.body = objectToFormData(object);
+        request.headers = new Headers({
+          'Authorization': 'Bearer ' + this.options.token,
+          'Content-Type': 'multipart/form-data',
+          'Accept': 'application/json',
+        });
       }
 
       fetch(this.options.micropubEndpoint, request)
@@ -277,8 +285,53 @@ class Micropub {
             fulfill(result);
           }
         })
-        // .catch((err) => reject('Error sending request'));
-        .catch((err) => reject(err));
+        .catch((err) => reject('Error sending request'));
+    });
+  }
+
+  postMedia(file) {
+    return new Promise((fulfill, reject) => {
+      const requirements = this.checkRequiredOptions(['token', 'mediaEndpoint']);
+      if (!requirements.pass) {
+        reject('Missing required options: ' + requirements.missing.join(', '));
+      }
+
+      let request = {
+        method: 'POST',
+        body: objectToFormData({file: file}),
+        headers: new Headers({
+          'Authorization': 'Bearer ' + this.options.token,
+          'Content-Type': 'multipart/form-data',
+          'Accept': 'application/json',
+        }),
+      };
+
+      fetch(this.options.mediaEndpoint, request)
+        .then((res) => {
+          const location = res.headers.get('Location');
+          if (location) {
+            fulfill(location);
+          }
+          const contentType = res.headers.get('Content-Type');
+          if (contentType.indexOf('application/json') === 0) {
+            return res.json()
+          } else {
+            return res.text();
+          }
+        })
+        .then((result) => {
+          if (typeof result === 'string') {
+            result = qs.parse(result);
+          }
+          if (result.error_description) {
+            reject(result.error_description);
+          } else if (result.error) {
+            reject(result.error);
+          } else {
+            fulfill(result);
+          }
+        })
+        .catch((err) => reject('Error sending request'));
     });
   }
 
@@ -334,8 +387,7 @@ class Micropub {
       fetch(url, request)
         .then((res) => res.json())
         .then((json) => fulfill(json))
-        // .catch((err) => reject('Error getting source'));
-        .catch((err) => reject(err));
+        .catch((err) => reject('Error getting source'));
     });
   }
 }
