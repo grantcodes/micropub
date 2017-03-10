@@ -1,9 +1,12 @@
 {
-  "name": "micropub",
-  "version": "0.0.2",
-  "description": "A simple micropub helper",
+  "name": "micropub-helper",
+  "version": "0.0.3",
+  "description": "A simple helper class for creating micropub clients",
+  "keywords": ["micropub", "indieweb"],
+  "homepage": "https://github.com/terminalpixel/micropub",
+  "bugs": "https://github.com/terminalpixel/micropub/issues",
   "main": "index.js",
-  "author": "Grant Richmond <mail@grant.codes>",
+  "author": "Grant Richmond <mail@grant.codes> (https://grant.codes)",
   "license": "MIT",
   "dependencies": {
     "form-data": "^2.1.2",
