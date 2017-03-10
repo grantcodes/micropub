@@ -207,7 +207,7 @@ class Micropub {
     return this.postMicropub(Object.assign({
       action: 'update',
       url: url,
-    }), update);
+    }, update));
   }
 
   delete(url) {
@@ -255,7 +255,7 @@ class Micropub {
         request.body = objectToFormData(object);
         request.headers = new Headers({
           'Authorization': 'Bearer ' + this.options.token,
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': undefined,
           'Accept': 'application/json',
         });
       }
@@ -301,7 +301,7 @@ class Micropub {
         body: objectToFormData({file: file}),
         headers: new Headers({
           'Authorization': 'Bearer ' + this.options.token,
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': undefined,
           'Accept': 'application/json',
         }),
       };
