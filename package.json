@@ -2,7 +2,10 @@
   "name": "micropub",
   "version": "0.0.2",
   "description": "A simple micropub helper",
-  "main": "index.js",
+  "main": "src/main.js",
+  "browser": {
+    ".src/dependencies.js": ".src/dependencies-browser.js"
+  },
   "author": "Grant Richmond <mail@grant.codes>",
   "license": "MIT",
   "dependencies": {
