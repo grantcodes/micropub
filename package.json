@@ -1,6 +1,6 @@
 {
   "name": "micropub-helper",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A simple helper class for creating micropub clients",
   "keywords": ["micropub", "indieweb"],
   "homepage": "https://github.com/terminalpixel/micropub",

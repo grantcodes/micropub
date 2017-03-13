@@ -95,7 +95,7 @@ class Micropub {
 
   getToken(code) {
     return new Promise((fulfill, reject) => {
-      const requirements = this.checkRequiredOptions(['me', 'scope', 'clientId', 'redirectUri', 'tokenEndpoint']);
+      const requirements = this.checkRequiredOptions(['me', 'state', 'scope', 'clientId', 'redirectUri', 'tokenEndpoint']);
       if (!requirements.pass) {
         reject('Missing required options: ' + requirements.missing.join(', '));
       }
@@ -105,6 +105,7 @@ class Micropub {
         me: this.options.me,
         code: code,
         scope: this.options.scope,
+        state: this.options.state,
         client_id: this.options.clientId,
         redirect_uri: this.options.redirectUri,
       };
@@ -114,6 +115,7 @@ class Micropub {
       form.append('me', this.options.me);
       form.append('code', code);
       form.append('scope', this.options.scope);
+      form.append('state', this.options.state);
       form.append('client_id', this.options.clientId);
       form.append('redirect_uri', this.options.redirectUri);
 
