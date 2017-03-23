@@ -133,7 +133,7 @@ class Micropub {
       fetch(this.options.tokenEndpoint, request)
         .then((res) => {
           const contentType = res.headers.get('Content-Type');
-          if (contentType.indexOf('application/json') === 0) {
+          if (contentType && contentType.indexOf('application/json') === 0) {
             return res.json()
           } else {
             return res.text();
@@ -269,7 +269,7 @@ class Micropub {
             fulfill(location);
           }
           const contentType = res.headers.get('Content-Type');
-          if (contentType.indexOf('application/json') === 0) {
+          if (contentType && contentType.indexOf('application/json') === 0) {
             return res.json()
           } else {
             return res.text();
@@ -315,7 +315,7 @@ class Micropub {
             fulfill(location);
           }
           const contentType = res.headers.get('Content-Type');
-          if (contentType.indexOf('application/json') === 0) {
+          if (contentType && contentType.indexOf('application/json') === 0) {
             return res.json()
           } else {
             return res.text();
