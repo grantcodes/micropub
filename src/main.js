@@ -1,7 +1,6 @@
 'use strict';
 
-// import './dependencies';
-import './dependencies-browser';
+import './dependencies';
 
 const defaultSettings = {
   me: '',
@@ -91,13 +90,14 @@ class Micropub {
 
   getToken(code) {
     return new Promise((fulfill, reject) => {
-      const requirements = this.checkRequiredOptions(['me', 'scope', 'clientId', 'redirectUri', 'tokenEndpoint']);
+      const requirements = this.checkRequiredOptions(['me', 'state', 'scope', 'clientId', 'redirectUri', 'tokenEndpoint']);
       if (!requirements.pass) {
         reject('Missing required options: ' + requirements.missing.join(', '));
       }
 
       const data = {
         grant_type: 'authorization_code',
+        state: this.options.state,
         me: this.options.me,
         code: code,
         scope: this.options.scope,
@@ -107,6 +107,7 @@ class Micropub {
 
       let form = new FormData();
       form.append('grant_type', 'authorization_code');
+      form.append('state', this.options.state);
       form.append('me', this.options.me);
       form.append('code', code);
       form.append('scope', this.options.scope);
@@ -127,7 +128,7 @@ class Micropub {
       fetch(this.options.tokenEndpoint, request)
         .then((res) => {
           const contentType = res.headers.get('Content-Type');
-          if (contentType.indexOf('application/json') === 0) {
+          if (contentType && contentType.indexOf('application/json') === 0) {
             return res.json()
           } else {
             return res.text();
@@ -203,7 +204,7 @@ class Micropub {
     return this.postMicropub(Object.assign({
       action: 'update',
       url: url,
-    }), update);
+    }, update));
   }
 
   delete(url) {
@@ -249,7 +250,7 @@ class Micropub {
         request.body = objectToFormData(object);
         request.headers = new Headers({
           'Authorization': 'Bearer ' + this.options.token,
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': undefined,
           'Accept': 'application/json',
         });
       }
@@ -261,7 +262,7 @@ class Micropub {
             fulfill(location);
           }
           const contentType = res.headers.get('Content-Type');
-          if (contentType.indexOf('application/json') === 0) {
+          if (contentType && contentType.indexOf('application/json') === 0) {
             return res.json()
           } else {
             return res.text();
@@ -295,7 +296,7 @@ class Micropub {
         body: objectToFormData({file: file}),
         headers: new Headers({
           'Authorization': 'Bearer ' + this.options.token,
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': undefined,
           'Accept': 'application/json',
         }),
       };
@@ -307,7 +308,7 @@ class Micropub {
             fulfill(location);
           }
           const contentType = res.headers.get('Content-Type');
-          if (contentType.indexOf('application/json') === 0) {
+          if (contentType && contentType.indexOf('application/json') === 0) {
             return res.json()
           } else {
             return res.text();
