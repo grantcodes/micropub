@@ -1,6 +1,13 @@
 'use strict';
 
-import './dependencies';
+import * as dependencies from'./dependencies';
+const qsParse = dependencies.qsParse;
+const qsStringify = dependencies.qsStringify;
+const Microformats = dependencies.Microformats;
+const objectToFormData = dependencies.objectToFormData;
+if (dependencies.FormData && !global.FormData) {
+  global.FormData = dependencies.FormData;
+}
 
 const defaultSettings = {
   me: '',
@@ -257,7 +264,7 @@ class Micropub {
 
       fetch(this.options.micropubEndpoint, request)
         .then((res) => {
-          const location = res.headers.get('Location');
+          const location = res.headers.get('Location') || res.headers.get('location');
           if (location) {
             fulfill(location);
           }
@@ -303,7 +310,7 @@ class Micropub {
 
       fetch(this.options.mediaEndpoint, request)
         .then((res) => {
-          const location = res.headers.get('Location');
+          const location = res.headers.get('Location') || res.headers.get('location');
           if (location) {
             fulfill(location);
           }
