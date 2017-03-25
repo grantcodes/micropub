@@ -1,6 +1,6 @@
-const FormData = require('form-data');
+// const FormData = require('form-data');
 
-function objectToFormData(object, formData = new FormData(), name = false) {
+export default function objectToFormData(object, formData = new FormData(), name = false) {
   Object.keys(object).forEach((key) => {
     const data = object[key];
     if (name) {
@@ -14,5 +14,3 @@ function objectToFormData(object, formData = new FormData(), name = false) {
   });
   return formData;
 }
-
-module.exports = objectToFormData;

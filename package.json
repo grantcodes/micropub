@@ -1,11 +1,15 @@
 {
   "name": "micropub-helper",
-  "version": "0.0.5",
+  "version": "1.0.0",
   "description": "A simple helper class for creating micropub clients",
   "keywords": ["micropub", "indieweb"],
-  "homepage": "https://github.com/terminalpixel/micropub",
-  "bugs": "https://github.com/terminalpixel/micropub/issues",
-  "main": "index.js",
+  "homepage": "https://github.com/grantcodes/micropub",
+  "bugs": "https://github.com/grantcodes/micropub/issues",
+  "main": "./dist/main.js",
+  "browser": {
+    "main": "./src/main.js",
+    ".src/dependencies.js": ".src/dependencies-browser.js"
+  },
   "author": "Grant Richmond <mail@grant.codes> (https://grant.codes)",
   "license": "MIT",
   "dependencies": {
@@ -14,5 +18,18 @@
     "microformat-node": "^2.0.1",
     "microformat-shiv": "^2.0.3",
     "qs": "^6.4.0"
+  },
+  "scripts": {
+    "prepublish": "babel ./src -d ./dist --plugins=add-module-exports"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.24.0",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-preset-env": "^1.2.2"
+  },
+  "babel": {
+    "presets": [
+      "env"
+    ]
   }
 }

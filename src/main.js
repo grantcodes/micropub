@@ -1,11 +1,13 @@
 'use strict';
 
-require('isomorphic-fetch');
-const qs = require('qs');
-const FormData = require('form-data');
-// const Microformats = require('microformat-shiv');
-const Microformats = require('microformat-node');
-const objectToFormData = require('./lib/object-to-form-data');
+import * as dependencies from'./dependencies';
+const qsParse = dependencies.qsParse;
+const qsStringify = dependencies.qsStringify;
+const Microformats = dependencies.Microformats;
+const objectToFormData = dependencies.objectToFormData;
+if (dependencies.FormData && !global.FormData) {
+  global.FormData = dependencies.FormData;
+}
 
 const defaultSettings = {
   me: '',
@@ -102,6 +104,7 @@ class Micropub {
 
       const data = {
         grant_type: 'authorization_code',
+        state: this.options.state,
         me: this.options.me,
         code: code,
         scope: this.options.scope,
@@ -112,6 +115,7 @@ class Micropub {
 
       let form = new FormData();
       form.append('grant_type', 'authorization_code');
+      form.append('state', this.options.state);
       form.append('me', this.options.me);
       form.append('code', code);
       form.append('scope', this.options.scope);
@@ -142,7 +146,7 @@ class Micropub {
         .then((result) => {
           // Parse the response from the indieauth server
           if (typeof result === 'string') {
-            result = qs.parse(result);
+            result = qsParse(result);
           }
           if (result.error_description) {
             reject(result.error_description);
@@ -195,7 +199,7 @@ class Micropub {
             state: this.options.state,
           };
 
-          fulfill(this.options.authEndpoint + '?' + qs.stringify(authParams));
+          fulfill(this.options.authEndpoint + '?' + qsStringify(authParams));
         })
         .catch((err) => reject(err));
     });
@@ -233,8 +237,6 @@ class Micropub {
         reject('Missing required options: ' + requirements.missing.join(', '));
       }
 
-
-
       let request = {
         method: 'POST',
       };
@@ -247,7 +249,7 @@ class Micropub {
           'Accept': 'application/json',
         });
       } else if (type == 'form') {
-        request.body = qs.stringify(object);
+        request.body = qsStringify(object);
         request.headers = new Headers({
           'Authorization': 'Bearer ' + this.options.token,
           'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
@@ -264,7 +266,7 @@ class Micropub {
 
       fetch(this.options.micropubEndpoint, request)
         .then((res) => {
-          const location = res.headers.get('Location');
+          const location = res.headers.get('Location') || res.headers.get('location');
           if (location) {
             fulfill(location);
           }
@@ -277,7 +279,7 @@ class Micropub {
         })
         .then((result) => {
           if (typeof result === 'string') {
-            result = qs.parse(result);
+            result = qsParse(result);
           }
           if (result.error_description) {
             reject(result.error_description);
@@ -310,7 +312,7 @@ class Micropub {
 
       fetch(this.options.mediaEndpoint, request)
         .then((res) => {
-          const location = res.headers.get('Location');
+          const location = res.headers.get('Location') || res.headers.get('location');
           if (location) {
             fulfill(location);
           }
@@ -323,7 +325,7 @@ class Micropub {
         })
         .then((result) => {
           if (typeof result === 'string') {
-            result = qs.parse(result);
+            result = qsParse(result);
           }
           if (result.error_description) {
             reject(result.error_description);
@@ -394,4 +396,4 @@ class Micropub {
   }
 }
 
-module.exports = Micropub;
+export default Micropub;
