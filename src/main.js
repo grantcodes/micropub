@@ -5,6 +5,7 @@ const qsParse = dependencies.qsParse;
 const qsStringify = dependencies.qsStringify;
 const Microformats = dependencies.Microformats;
 const objectToFormData = dependencies.objectToFormData;
+const appendQueryString = dependencies.appendQueryString;
 if (dependencies.FormData && !global.FormData) {
   global.FormData = dependencies.FormData;
 }
@@ -346,8 +347,7 @@ class Micropub {
         reject('Missing required options: ' + requirements.missing.join(', '));
       }
 
-      let url = this.options.micropubEndpoint.replace(/\/+$/, '');
-      url += '?q=' + type;
+      const url = appendQueryString(this.options.micropubEndpoint, {q: type});
 
       const request = {
         method: 'GET',
@@ -373,10 +373,7 @@ class Micropub {
         reject('Missing required options: ' + requirements.missing.join(', '));
       }
 
-      url = this.options.micropubEndpoint.replace(/\/+$/, '') + '?q=source&url=' + url;
-      for (var i = 0; i < properties.length; i++) {
-        url += '&properties[]=' + properties[i];
-      }
+      url = appendQueryString(this.options.micropubEndpoint, {q: 'source', url: url, properties: properties});
 
       const request = {
         method: 'GET',
