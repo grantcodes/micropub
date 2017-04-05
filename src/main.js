@@ -206,6 +206,29 @@ class Micropub {
     });
   }
 
+  verifyToken() {
+    return new Promise((fulfill, reject) => {
+      const requirements = this.checkRequiredOptions(['token', 'micropubEndpoint']);
+      if (!requirements.pass) {
+        reject('Missing required options: ' + requirements.missing.join(', '));
+      }
+
+      const request = {
+        method: 'GET',
+        headers: new Headers({
+          'Authorization': 'Bearer ' + this.options.token,
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          'Accept': 'application/json',
+        }),
+      };
+
+      fetch(this.options.micropubEndpoint, request)
+        .then((res) => res.json())
+        .then((json) => fulfill(json))
+        .catch((err) => reject('Error verifying token'));
+    });
+  }
+
   create(post, type = 'json') {
     return this.postMicropub(post, type);
   }
