@@ -210,8 +210,13 @@ class Micropub {
       };
 
       fetch(this.options.micropubEndpoint, request)
-        .then((res) => res.json())
-        .then((json) => fulfill(json))
+        .then((res) => {
+          if (res.ok) {
+            fulfill();
+          } else {
+            reject('Error verifying token') 
+          }
+        })
         .catch((err) => reject('Error verifying token'));
     });
   }
