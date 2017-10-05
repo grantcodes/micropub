@@ -1,8 +1,11 @@
 {
   "name": "micropub-helper",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "A simple helper class for creating micropub clients",
-  "keywords": ["micropub", "indieweb"],
+  "keywords": [
+    "micropub",
+    "indieweb"
+  ],
   "homepage": "https://github.com/grantcodes/micropub",
   "bugs": "https://github.com/grantcodes/micropub/issues",
   "main": "./dist/main.js",

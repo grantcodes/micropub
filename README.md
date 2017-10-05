@@ -129,5 +129,18 @@ Update requests require the url of the post and the update data:
       })
       .catch((err) => console.log(err));
 
+### Error handling
 
+As of version `1.2.0` error handling is greatly improved.
 
+If there are any errors you catch will come in an object: 
+
+    {
+      message: 'Human readable string',
+      status: null or the http status code,
+      error: null or further error information,
+    }
+
+Generally if there is a `status` code that means the micropub endpoint returned an http error.
+And if there is `error` then there was an error sending the request at your end.
+This might not be 100% accurate as there are a lot of potential errors.
