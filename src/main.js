@@ -114,24 +114,13 @@ class Micropub {
         redirect_uri: this.options.redirectUri,
       };
 
-      let form = new FormData();
-      form.append('grant_type', 'authorization_code');
-      form.append('state', this.options.state);
-      form.append('me', this.options.me);
-      form.append('code', code);
-      form.append('scope', this.options.scope);
-      form.append('state', this.options.state);
-      form.append('client_id', this.options.clientId);
-      form.append('redirect_uri', this.options.redirectUri);
-
       const request = {
         method: 'POST',
-        body: form,
-        // body: JSON.stringify(data),
-        // headers: new Headers({
-        //   'Content-Type': 'application/json',
-        //   'Accept': 'application/json',
-        // }),
+        body: qsStringify(data),
+        headers: new Headers({
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          'Accept': 'application/json',
+        }),
         // mode: 'cors',
       };
       // This could maybe use the postMicropub method
@@ -217,8 +206,6 @@ class Micropub {
         method: 'GET',
         headers: new Headers({
           'Authorization': 'Bearer ' + this.options.token,
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-          'Accept': 'application/json',
         }),
       };
 
