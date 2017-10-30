@@ -2,6 +2,7 @@ export * from 'isomorphic-fetch';
 // export {default as setLoading} from './action-set-loading';
 // export * from './user';
 export {parse as qsParse, stringify as qsStringify} from 'qs';
+export {URL as URL} from 'url';
 export {default as FormData} from 'form-data';
 export {default as Microformats} from 'microformat-node';
 // import Microformats from 'microformat-shiv';

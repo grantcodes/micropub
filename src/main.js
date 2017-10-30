@@ -9,6 +9,9 @@ const appendQueryString = dependencies.appendQueryString;
 if (dependencies.FormData && !global.FormData) {
   global.FormData = dependencies.FormData;
 }
+if (dependencies.URL && !global.URL) {
+  global.URL = dependencies.URL;
+}
 
 const defaultSettings = {
   me: '',
@@ -71,6 +74,8 @@ class Micropub {
    */
   getEndpointsFromUrl(url) {
     return new Promise((fulfill, reject) => {
+      // Get the base url from the given url
+      const baseUrl = new URL(url).origin;
       // Fetch the given url
       fetch(url)
         .then((res) => {
@@ -83,6 +88,7 @@ class Micropub {
           // Parse the microformats data
           Microformats.get({
             html: html,
+            baseUrl: baseUrl,
           }, (err, mfData) => {
             if (err) {
               return reject(micropubError('Error parsing microformats data', null, err));

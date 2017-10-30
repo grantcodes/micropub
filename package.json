@@ -1,6 +1,6 @@
 {
   "name": "micropub-helper",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "A simple helper class for creating micropub clients",
   "keywords": [
     "micropub",
@@ -16,19 +16,19 @@
   "author": "Grant Richmond <mail@grant.codes> (https://grant.codes)",
   "license": "MIT",
   "dependencies": {
-    "form-data": "^2.1.2",
+    "form-data": "^2.3.1",
     "isomorphic-fetch": "^2.2.1",
     "microformat-node": "^2.0.1",
     "microformat-shiv": "^2.0.3",
-    "qs": "^6.4.0"
+    "qs": "^6.5.1"
   },
   "scripts": {
     "prepublish": "babel ./src -d ./dist --plugins=add-module-exports"
   },
   "devDependencies": {
-    "babel-cli": "^6.24.0",
+    "babel-cli": "^6.26.0",
     "babel-plugin-add-module-exports": "^0.2.1",
-    "babel-preset-env": "^1.2.2"
+    "babel-preset-env": "^1.6.1"
   },
   "babel": {
     "presets": [
