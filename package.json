@@ -11,19 +11,22 @@
   "main": "./dist/main.js",
   "browser": {
     "main": "./src/main.js",
-    ".src/dependencies.js": ".src/dependencies-browser.js"
+    "./dist/main.js": "./src/main.js",
+    "./src/dependencies.js": "./src/dependencies-browser.js",
+    "jsdom": false,
+    "isomorphic-fetch": false,
+    "form-data": false
   },
   "author": "Grant Richmond <mail@grant.codes> (https://grant.codes)",
   "license": "MIT",
   "dependencies": {
     "form-data": "^2.3.1",
     "isomorphic-fetch": "^2.2.1",
-    "microformat-node": "^2.0.1",
-    "microformat-shiv": "^2.0.3",
+    "jsdom": "^11.3.0",
     "qs": "^6.5.1"
   },
   "scripts": {
-    "prepublish": "babel ./src -d ./dist --plugins=add-module-exports"
+    "prepublish": "BABEL_ENV=production babel ./src -d ./dist"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -33,6 +36,7 @@
   "babel": {
     "presets": [
       "env"
-    ]
+    ],
+    "plugins": ["add-module-exports"]
   }
 }

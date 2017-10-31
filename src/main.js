@@ -2,12 +2,15 @@
 
 import * as dependencies from'./dependencies';
 const qsParse = dependencies.qsParse;
+const relScraper = dependencies.relScraper;
 const qsStringify = dependencies.qsStringify;
-const Microformats = dependencies.Microformats;
 const objectToFormData = dependencies.objectToFormData;
 const appendQueryString = dependencies.appendQueryString;
 if (dependencies.FormData && !global.FormData) {
   global.FormData = dependencies.FormData;
+}
+if (dependencies.DOMParser && !global.DOMParser) {
+  global.DOMParser = dependencies.DOMParser;
 }
 if (dependencies.URL && !global.URL) {
   global.URL = dependencies.URL;
@@ -74,42 +77,65 @@ class Micropub {
    */
   getEndpointsFromUrl(url) {
     return new Promise((fulfill, reject) => {
+      let endpoints = {
+        micropub: null,
+        authorization_endpoint: null,
+        token_endpoint: null,
+      };
       // Get the base url from the given url
-      const baseUrl = new URL(url).origin;
+      let baseUrl = url;
       // Fetch the given url
       fetch(url)
         .then((res) => {
           if (!res.ok) {
             return reject(micropubError('Error getting page', res.status));
           }
+          baseUrl = res.url;
+
+          // Check for endpoints in headers
+          const linkHeaders = res.headers.get('link');
+          if (linkHeaders) {
+            const links = linkHeaders.split(',');
+            links.forEach((link) => {
+              Object.keys(endpoints).forEach((key) => {
+                if (link.indexOf(`rel="${key}"`) > 1) {
+                  let linkValues = link.match(/[^<>|\s]+/g);
+                  if (linkValues && linkValues[0]) {
+                    endpoints[key] = linkValues[0];
+                  }
+                }
+              });
+            });
+          }
+
           return res.text()
         })
         .then((html) => {
-          // Parse the microformats data
-          Microformats.get({
-            html: html,
-            baseUrl: baseUrl,
-          }, (err, mfData) => {
-            if (err) {
-              return reject(micropubError('Error parsing microformats data', null, err));
-            }
+          // Get rel links
+          const rels = relScraper(html, baseUrl);
 
-            // Save necessary endpoints.
-            if (mfData && mfData.rels && mfData.rels.authorization_endpoint && mfData.rels.token_endpoint && mfData.rels.micropub) {
-              this.options.me = url;
-              this.options.authEndpoint = mfData.rels.authorization_endpoint[0];
-              this.options.tokenEndpoint = mfData.rels.token_endpoint[0];
-              this.options.micropubEndpoint = mfData.rels.micropub[0];
+          // Save necessary endpoints.
+          this.options.me = url;
+          if (rels) {
+            Object.keys(endpoints).forEach((key) => {
+              if (rels[key] && rels[key][0]) {
+                endpoints[key] = rels[key][0];
+              }
+            });
+          }
 
-              fulfill({
-                auth: this.options.authEndpoint,
-                token: this.options.tokenEndpoint,
-                micropub: this.options.micropubEndpoint,
-              });
-            }
+          if (endpoints.micropub && endpoints.authorization_endpoint && endpoints.token_endpoint) {
+            this.options.micropubEndpoint = endpoints.micropub;
+            this.options.tokenEndpoint = endpoints.token_endpoint;
+            this.options.authEndpoint = endpoints.authorization_endpoint;
+            return fulfill({
+              auth: this.options.authEndpoint,
+              token: this.options.tokenEndpoint,
+              micropub: this.options.micropubEndpoint,
+            });
+          }
 
-            return reject(micropubError('Error getting microformats data'));
-          });
+          return reject(micropubError('Error getting microformats data'));
         })
         .catch((err) => reject(micropubError('Error fetching url', null, err)));
     });
