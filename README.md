@@ -1,7 +1,5 @@
 # Micropub.js
 
-Warning!!! This is very much a work in progress and not ready for production use yet. Contributions very much appreciated.
-
 A [micropub](https://micropub.net/) helper library for JavaScript.
 
 ## Usage
@@ -144,3 +142,8 @@ If there are any errors you catch will come in an object:
 Generally if there is a `status` code that means the micropub endpoint returned an http error.
 And if there is `error` then there was an error sending the request at your end.
 This might not be 100% accurate as there are a lot of potential errors.
+
+## Thanks
+
+- [sknebel](https://github.com/sknebel) - For helping with the rel scraping function
+- [Zegnat](https://github.com/Zegnat) - For helping with the rel scraping function
