@@ -98,8 +98,9 @@ class Micropub {
             const links = linkHeaders.split(',');
             links.forEach((link) => {
               Object.keys(endpoints).forEach((key) => {
-                if (link.indexOf(`rel="${key}"`) > 1) {
-                  let linkValues = link.match(/[^<>|\s]+/g);
+                const rel = link.match(/rel=("([^"]*)"|([^,"<]+))/)
+                if (rel && rel[1] && rel[1].indexOf(key) >= 0) {
+                  const linkValues = link.match(/[^<>|\s]+/g);
                   if (linkValues && linkValues[0]) {
                     endpoints[key] = linkValues[0];
                   }
