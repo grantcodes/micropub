@@ -165,7 +165,7 @@ class Micropub {
         body: qsStringify(data),
         headers: new Headers({
           'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-          'Accept': 'application/json',
+          'Accept': 'application/json, application/x-www-form-urlencoded',
         }),
         // mode: 'cors',
       };
@@ -311,21 +311,21 @@ class Micropub {
         request.headers = new Headers({
           'Authorization': 'Bearer ' + this.options.token,
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          'Accept': 'application/json, application/x-www-form-urlencoded',
         });
       } else if (type == 'form') {
         request.body = qsStringify(object);
         request.headers = new Headers({
           'Authorization': 'Bearer ' + this.options.token,
           'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-          'Accept': 'application/json',
+          'Accept': 'application/json, application/x-www-form-urlencoded',
         });
       } else if (type == 'multipart') {
         request.body = objectToFormData(object);
         request.headers = new Headers({
           'Authorization': 'Bearer ' + this.options.token,
           'Content-Type': undefined,
-          'Accept': 'application/json',
+          'Accept': 'application/json, application/x-www-form-urlencoded',
         });
       }
 
@@ -374,7 +374,7 @@ class Micropub {
         headers: new Headers({
           'Authorization': 'Bearer ' + this.options.token,
           'Content-Type': undefined,
-          'Accept': 'application/json',
+          'Accept': '*/*',
         }),
       };
 
