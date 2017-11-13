@@ -8,8 +8,8 @@ export default function (htmlString, url) {
 
   if (baseEl) {
     const value = baseEl.getAttribute('href');
-    const url = new URL(value, url);
-    baseUrl = url.toString();
+    const urlObj = new URL(value, url);
+    baseUrl = urlObj.toString();
   }
 
   if (relEls.length) {
