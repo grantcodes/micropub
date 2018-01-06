@@ -35,7 +35,7 @@ const micropubError = (message, status = null, error = null) => {
 
 class Micropub {
   constructor(userSettings = {}) {
-    this.options = Object.assign(defaultSettings, userSettings);
+    this.options = Object.assign({}, defaultSettings, userSettings);
 
     // Bind all the things
     this.create = this.create.bind(this);
