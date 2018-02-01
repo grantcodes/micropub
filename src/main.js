@@ -102,7 +102,9 @@ class Micropub {
                 if (rel && rel[1] && rel[1].indexOf(key) >= 0) {
                   const linkValues = link.match(/[^<>|\s]+/g);
                   if (linkValues && linkValues[0]) {
-                    endpoints[key] = linkValues[0];
+                    let endpointUrl = linkValues[0];
+                    endpointUrl = new URL(endpointUrl, url).toString();
+                    endpoints[key] = endpointUrl;
                   }
                 }
               });
