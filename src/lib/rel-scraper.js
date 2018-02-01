@@ -1,4 +1,4 @@
-export default function (htmlString, url) {
+export default function(htmlString, url) {
   let rels = {};
   let baseUrl = url;
 
@@ -13,11 +13,14 @@ export default function (htmlString, url) {
   }
 
   if (relEls.length) {
-    relEls.forEach((relEl) => {
-      const names = relEl.getAttribute('rel').toLowerCase().split("\\s+");
+    relEls.forEach(relEl => {
+      const names = relEl
+        .getAttribute('rel')
+        .toLowerCase()
+        .split('\\s+');
       const value = relEl.getAttribute('href');
       if (names.length && value !== null) {
-        names.forEach((name) => {
+        names.forEach(name => {
           if (!rels[name]) {
             rels[name] = [];
           }
