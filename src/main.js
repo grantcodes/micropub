@@ -152,8 +152,6 @@ class Micropub {
     return new Promise((fulfill, reject) => {
       const requirements = this.checkRequiredOptions([
         'me',
-        'state',
-        'scope',
         'clientId',
         'redirectUri',
         'tokenEndpoint',
@@ -168,11 +166,8 @@ class Micropub {
 
       const data = {
         grant_type: 'authorization_code',
-        state: this.options.state,
         me: this.options.me,
         code: code,
-        scope: this.options.scope,
-        state: this.options.state,
         client_id: this.options.clientId,
         redirect_uri: this.options.redirectUri,
       };
