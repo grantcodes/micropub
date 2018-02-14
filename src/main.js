@@ -378,7 +378,7 @@ class Micropub {
           Accept: 'application/json, application/x-www-form-urlencoded',
         });
       } else if (type == 'form') {
-        request.body = qsStringify(object);
+        request.body = qsStringify(object, { arrayFormat: 'brackets' });
         request.headers = new Headers({
           Authorization: 'Bearer ' + this.options.token,
           'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
