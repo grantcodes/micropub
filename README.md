@@ -149,7 +149,7 @@ micropub.update('post_url', {
 
 As of version `1.2.0` error handling is greatly improved.
 
-If there are any errors you catch will come in an object: 
+If there are any errors then the methods will reject with an object:
 
 ```js
 {
@@ -169,3 +169,4 @@ This might not be 100% accurate as there are a lot of potential errors.
 - [Zegnat](https://github.com/Zegnat) - For helping with the rel scraping function
 - [myfreeweb](https://github.com/myfreeweb) - For fixing Link header handling and help with Accept headers
 - [00dani](https://github.com/00dani) - For fixing base tag support in the rel scraper
+- [pstuifzand](https://github.com/pstuifzand) - For fixing form encoded arrays
