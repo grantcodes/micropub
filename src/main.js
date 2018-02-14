@@ -97,14 +97,13 @@ class Micropub {
           if (linkHeaders) {
             const links = linkHeaders.split(',');
             links.forEach(link => {
-              link = link.toLowerCase();
               Object.keys(endpoints).forEach(key => {
-                key = key.toLowerCase();
                 const rel = link.match(/rel=("([^"]*)"|([^,"<]+))/);
                 if (
                   rel &&
                   rel[1] &&
-                  (' ' + rel[1] + ' ').indexOf(' ' + key + ' ') >= 0
+                  (' ' + rel[1].toLowerCase() + ' ').indexOf(' ' + key + ' ') >=
+                    0
                 ) {
                   const linkValues = link.match(/[^<>|\s]+/g);
                   if (linkValues && linkValues[0]) {
