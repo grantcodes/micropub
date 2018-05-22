@@ -20,10 +20,10 @@
   "author": "Grant Richmond <mail@grant.codes> (https://grant.codes)",
   "license": "MIT",
   "dependencies": {
-    "form-data": "^2.3.1",
+    "form-data": "^2.3.2",
     "isomorphic-fetch": "^2.2.1",
-    "jsdom": "^11.3.0",
-    "qs": "^6.5.1"
+    "jsdom": "^11.10.0",
+    "qs": "^6.5.2"
   },
   "scripts": {
     "prepublish": "BABEL_ENV=production babel ./src -d ./dist"
@@ -31,7 +31,7 @@
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-plugin-add-module-exports": "^0.2.1",
-    "babel-preset-env": "^1.6.1"
+    "babel-preset-env": "^1.7.0"
   },
   "babel": {
     "presets": [
