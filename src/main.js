@@ -1,5 +1,3 @@
-'use strict';
-
 import * as dependencies from './dependencies';
 const qsParse = dependencies.qsParse;
 const relScraper = dependencies.relScraper;

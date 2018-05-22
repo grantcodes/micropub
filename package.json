@@ -40,5 +40,9 @@
     "plugins": [
       "add-module-exports"
     ]
+  },
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "all"
   }
 }
