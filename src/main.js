@@ -178,10 +178,10 @@ class Micropub {
       const request = {
         method: 'POST',
         body: qsStringify(data),
-        headers: new Headers({
+        headers: {
           'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
           Accept: 'application/json, application/x-www-form-urlencoded',
-        }),
+        },
         // mode: 'cors',
       };
       // This could maybe use the postMicropub method
@@ -301,9 +301,9 @@ class Micropub {
 
       const request = {
         method: 'GET',
-        headers: new Headers({
+        headers: {
           Authorization: 'Bearer ' + this.options.token,
-        }),
+        },
       };
 
       fetch(this.options.micropubEndpoint, request)
@@ -370,25 +370,24 @@ class Micropub {
 
       if (type == 'json') {
         request.body = JSON.stringify(object);
-        request.headers = new Headers({
+        request.headers = {
           Authorization: 'Bearer ' + this.options.token,
           'Content-Type': 'application/json',
           Accept: 'application/json, application/x-www-form-urlencoded',
-        });
+        };
       } else if (type == 'form') {
         request.body = qsStringify(object, { arrayFormat: 'brackets' });
-        request.headers = new Headers({
+        request.headers = {
           Authorization: 'Bearer ' + this.options.token,
           'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
           Accept: 'application/json, application/x-www-form-urlencoded',
-        });
+        };
       } else if (type == 'multipart') {
         request.body = objectToFormData(object);
-        request.headers = new Headers({
+        request.headers = {
           Authorization: 'Bearer ' + this.options.token,
-          'Content-Type': undefined,
           Accept: 'application/json, application/x-www-form-urlencoded',
-        });
+        };
       }
 
       fetch(this.options.micropubEndpoint, request)
@@ -445,11 +444,10 @@ class Micropub {
       let request = {
         method: 'POST',
         body: objectToFormData({ file: file }),
-        headers: new Headers({
+        headers: {
           Authorization: 'Bearer ' + this.options.token,
-          'Content-Type': undefined,
           Accept: '*/*',
-        }),
+        },
       };
 
       fetch(this.options.mediaEndpoint, request)
@@ -492,11 +490,11 @@ class Micropub {
 
       const request = {
         method: 'GET',
-        headers: new Headers({
+        headers: {
           Authorization: 'Bearer ' + this.options.token,
           'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
           Accept: 'application/json',
-        }),
+        },
         // mode: 'cors',
       };
 
@@ -536,11 +534,11 @@ class Micropub {
 
       const request = {
         method: 'GET',
-        headers: new Headers({
+        headers: {
           Authorization: 'Bearer ' + this.options.token,
           'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
           Accept: 'application/json',
-        }),
+        },
         // mode: 'cors',
       };
 
