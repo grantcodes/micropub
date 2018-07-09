@@ -97,10 +97,11 @@ class Micropub {
             links.forEach(link => {
               Object.keys(endpoints).forEach(key => {
                 const rel = link.match(/rel=("([^"]*)"|([^,"<]+))/);
+                const relGroup = rel[2] || rel[1]
                 if (
                   rel &&
-                  rel[1] &&
-                  (' ' + rel[1].toLowerCase() + ' ').indexOf(' ' + key + ' ') >=
+                  relGroup &&
+                  (' ' + relGroup.toLowerCase() + ' ').indexOf(' ' + key + ' ') >=
                     0
                 ) {
                   const linkValues = link.match(/[^<>|\s]+/g);
