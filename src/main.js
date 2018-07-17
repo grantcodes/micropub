@@ -4,6 +4,7 @@ const relScraper = dependencies.relScraper;
 const qsStringify = dependencies.qsStringify;
 const objectToFormData = dependencies.objectToFormData;
 const appendQueryString = dependencies.appendQueryString;
+const linkHeaderParser = dependencies.li.parse;
 if (dependencies.FormData && !global.FormData) {
   global.FormData = dependencies.FormData;
 }
@@ -93,25 +94,11 @@ class Micropub {
           // Check for endpoints in headers
           const linkHeaders = res.headers.get('link');
           if (linkHeaders) {
-            const links = linkHeaders.split(',');
-            links.forEach(link => {
-              Object.keys(endpoints).forEach(key => {
-                const rel = link.match(/rel=("([^"]*)"|([^,"<]+))/);
-                const relGroup = rel[2] || rel[1]
-                if (
-                  rel &&
-                  relGroup &&
-                  (' ' + relGroup.toLowerCase() + ' ').indexOf(' ' + key + ' ') >=
-                    0
-                ) {
-                  const linkValues = link.match(/[^<>|\s]+/g);
-                  if (linkValues && linkValues[0]) {
-                    let endpointUrl = linkValues[0];
-                    endpointUrl = new URL(endpointUrl, url).toString();
-                    endpoints[key] = endpointUrl;
-                  }
-                }
-              });
+            const links = linkHeaderParser(linkHeaders);
+            Object.keys(endpoints).forEach(key => {
+              if (links[key]) {
+                endpoints[key] = links[key];
+              }
             });
           }
 
