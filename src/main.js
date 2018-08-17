@@ -84,7 +84,7 @@ class Micropub {
       // Get the base url from the given url
       let baseUrl = url;
       // Fetch the given url
-      fetch(url)
+      fetch(url, { credentials: 'omit' })
         .then(res => {
           if (!res.ok) {
             return reject(micropubError('Error getting page', res.status));
@@ -165,6 +165,7 @@ class Micropub {
 
       const request = {
         method: 'POST',
+        credentials: 'omit',
         body: qsStringify(data),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
@@ -289,6 +290,7 @@ class Micropub {
 
       const request = {
         method: 'GET',
+        credentials: 'omit',
         headers: {
           Authorization: 'Bearer ' + this.options.token,
         },
@@ -354,6 +356,7 @@ class Micropub {
 
       let request = {
         method: 'POST',
+        credentials: 'omit',
       };
 
       if (type == 'json') {
@@ -431,6 +434,7 @@ class Micropub {
 
       let request = {
         method: 'POST',
+        credentials: 'omit',
         body: objectToFormData({ file: file }),
         headers: {
           Authorization: 'Bearer ' + this.options.token,
@@ -478,6 +482,7 @@ class Micropub {
 
       const request = {
         method: 'GET',
+        credentials: 'omit',
         headers: {
           Authorization: 'Bearer ' + this.options.token,
           'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
@@ -522,6 +527,7 @@ class Micropub {
 
       const request = {
         method: 'GET',
+        credentials: 'omit',
         headers: {
           Authorization: 'Bearer ' + this.options.token,
           'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
