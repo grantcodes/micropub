@@ -1,4 +1,3 @@
-export * from 'isomorphic-fetch';
 export { parse as qsParse, stringify as qsStringify } from 'qs';
 export { URL } from 'url';
 export { DOMParser } from 'jsdom/lib/jsdom/living';

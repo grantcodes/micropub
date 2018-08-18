@@ -1,4 +1,5 @@
 import * as dependencies from './dependencies';
+import axios from 'axios';
 const qsParse = dependencies.qsParse;
 const relScraper = dependencies.relScraper;
 const qsStringify = dependencies.qsStringify;
@@ -17,13 +18,20 @@ if (dependencies.URL && !global.URL) {
 
 const defaultSettings = {
   me: '',
-  scope: 'post create delete update',
+  scope: 'create delete update',
   token: '',
   authEndpoint: '',
   tokenEndpoint: '',
   micropubEndpoint: '',
 };
 
+/**
+ * Creates an error object
+ * @param {string} message A human readable error message
+ * @param {int} status A http response status from the micropub endpoint
+ * @param {object} error A full error object if available
+ * @return {object} A consistently formatted error object
+ */
 const micropubError = (message, status = null, error = null) => {
   return {
     message: message,
@@ -32,7 +40,14 @@ const micropubError = (message, status = null, error = null) => {
   };
 };
 
+/**
+ * A micropub helper class
+ */
 class Micropub {
+  /**
+   * Micropub class constructor
+   * @param {object} userSettings Settings supplied for this micropub client
+   */
   constructor(userSettings = {}) {
     this.options = Object.assign({}, defaultSettings, userSettings);
 
@@ -84,15 +99,10 @@ class Micropub {
       // Get the base url from the given url
       let baseUrl = url;
       // Fetch the given url
-      fetch(url, { credentials: 'omit' })
+      axios({ url, method: 'get', responseType: 'text' })
         .then(res => {
-          if (!res.ok) {
-            return reject(micropubError('Error getting page', res.status));
-          }
-          baseUrl = res.url;
-
           // Check for endpoints in headers
-          const linkHeaders = res.headers.get('link');
+          const linkHeaders = res.headers.link;
           if (linkHeaders) {
             const links = linkHeaderParser(linkHeaders);
             Object.keys(endpoints).forEach(key => {
@@ -102,9 +112,8 @@ class Micropub {
             });
           }
 
-          return res.text();
-        })
-        .then(html => {
+          const html = res.data;
+
           // Get rel links
           const rels = relScraper(html, baseUrl);
 
@@ -135,10 +144,17 @@ class Micropub {
 
           return reject(micropubError('Error getting microformats data'));
         })
-        .catch(err => reject(micropubError('Error fetching url', null, err)));
+        .catch(err =>
+          reject(micropubError('Error fetching url', err.response.status, err)),
+        );
     });
   }
 
+  /**
+   * Exchanges a code for an access token
+   * @param {string} code A code received from the auth endpoint
+   * @return {promise} Promise which resolves with the access token on success
+   */
   getToken(code) {
     return new Promise((fulfill, reject) => {
       const requirements = this.checkRequiredOptions([
@@ -164,29 +180,18 @@ class Micropub {
       };
 
       const request = {
+        url: this.options.tokenEndpoint,
         method: 'POST',
-        credentials: 'omit',
-        body: qsStringify(data),
+        data: qsStringify(data),
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-          Accept: 'application/json, application/x-www-form-urlencoded',
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          accept: 'application/json, application/x-www-form-urlencoded',
         },
-        // mode: 'cors',
       };
       // This could maybe use the postMicropub method
-      fetch(this.options.tokenEndpoint, request)
+      axios(request)
         .then(res => {
-          if (!res.ok) {
-            return reject(micropubError('Error getting token', res.status));
-          }
-          const contentType = res.headers.get('Content-Type');
-          if (contentType && contentType.indexOf('application/json') === 0) {
-            return res.json();
-          } else {
-            return res.text();
-          }
-        })
-        .then(result => {
+          let result = res.data;
           // Parse the response from the indieauth server
           if (typeof result === 'string') {
             result = qsParse(result);
@@ -222,7 +227,13 @@ class Micropub {
           fulfill(result.access_token);
         })
         .catch(err =>
-          reject(micropubError('Error requesting token endpoint', null, err)),
+          reject(
+            micropubError(
+              'Error requesting token endpoint',
+              err.response.status,
+              err,
+            ),
+          ),
         );
     });
   }
@@ -274,6 +285,10 @@ class Micropub {
     });
   }
 
+  /**
+   * Verify the stored access token
+   * @return {promise} A promise that resolves true or rejects
+   */
   verifyToken() {
     return new Promise((fulfill, reject) => {
       const requirements = this.checkRequiredOptions([
@@ -289,31 +304,41 @@ class Micropub {
       }
 
       const request = {
+        url: this.options.micropubEndpoint,
         method: 'GET',
-        credentials: 'omit',
         headers: {
           Authorization: 'Bearer ' + this.options.token,
         },
       };
 
-      fetch(this.options.micropubEndpoint, request)
+      axios(request)
         .then(res => {
-          if (res.ok) {
-            return fulfill(true);
-          } else {
-            return reject(micropubError('Error verifying token', res.status));
-          }
+          return fulfill(true);
         })
         .catch(err =>
-          reject(micropubError('Error verifying token', null, err)),
+          reject(
+            micropubError('Error verifying token', err.response.status, err),
+          ),
         );
     });
   }
 
+  /**
+   * Creates a micropub post
+   * @param {object} post Micropub post data
+   * @param {string} type The type of form encoding to use
+   * @return {promise} Resolves on success with the url of the post or null if could not read the location header.
+   */
   create(post, type = 'json') {
     return this.postMicropub(post, type);
   }
 
+  /**
+   * Updates a micropub post
+   * @param {string} url The url of the post to update
+   * @param {object} update The micropub update object
+   * @return {promise} Resolves on success with the url of the post or null if could not read the location header.
+   */
   update(url, update) {
     return this.postMicropub(
       Object.assign(
@@ -326,6 +351,11 @@ class Micropub {
     );
   }
 
+  /**
+   * Deletes a micropub post
+   * @param {string} url The url of a post to delete
+   * @return {promise} Resolves on successful deletion
+   */
   delete(url) {
     return this.postMicropub({
       action: 'delete',
@@ -333,6 +363,11 @@ class Micropub {
     });
   }
 
+  /**
+   * Undeletes a post
+   * @param {string} url The url of a post to undelete
+   *  @return {promise} Resolves on successful undeletion
+   */
   undelete(url) {
     return this.postMicropub({
       action: 'undelete',
@@ -340,6 +375,12 @@ class Micropub {
     });
   }
 
+  /**
+   * Posts a micropub object
+   * @param {object} object A micropub post
+   * @param {string} type The type of form encoding for the post
+   * @return {promise} Resolves with the returned location header or null on success
+   */
   postMicropub(object, type = 'json') {
     return new Promise((fulfill, reject) => {
       const requirements = this.checkRequiredOptions([
@@ -355,69 +396,63 @@ class Micropub {
       }
 
       let request = {
+        url: this.options.micropubEndpoint,
         method: 'POST',
-        credentials: 'omit',
+        headers: {
+          authorization: 'Bearer ' + this.options.token,
+        },
       };
 
       if (type == 'json') {
-        request.body = JSON.stringify(object);
-        request.headers = {
-          Authorization: 'Bearer ' + this.options.token,
-          'Content-Type': 'application/json',
-          Accept: 'application/json, application/x-www-form-urlencoded',
-        };
+        request.data = JSON.stringify(object);
+        request.headers['content-type'] = 'application/json';
       } else if (type == 'form') {
-        request.body = qsStringify(object, { arrayFormat: 'brackets' });
-        request.headers = {
-          Authorization: 'Bearer ' + this.options.token,
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-          Accept: 'application/json, application/x-www-form-urlencoded',
-        };
+        request.data = qsStringify(object, { arrayFormat: 'brackets' });
+        request.headers['content-type'] =
+          'application/x-www-form-urlencoded;charset=UTF-8';
+        request.headers.accept =
+          'application/json, application/x-www-form-urlencoded';
       } else if (type == 'multipart') {
-        request.body = objectToFormData(object);
-        request.headers = {
-          Authorization: 'Bearer ' + this.options.token,
-          Accept: 'application/json, application/x-www-form-urlencoded',
-        };
+        request.data = objectToFormData(object);
+        request.headers.accept =
+          'application/json, application/x-www-form-urlencoded';
       }
 
-      fetch(this.options.micropubEndpoint, request)
-        .then(res => {
-          if (!res.ok) {
-            return reject(
-              micropubError('Error with micropub request', res.status),
-            );
-          }
-          const location =
-            res.headers.get('Location') || res.headers.get('location');
-          if (location) {
-            return fulfill(location);
-          }
-          const contentType = res.headers.get('Content-Type');
-          if (contentType && contentType.indexOf('application/json') === 0) {
-            return res.json();
-          } else {
-            return res.text();
-          }
-        })
+      axios(request)
         .then(result => {
-          if (typeof result === 'string') {
-            result = qsParse(result);
+          if (result.headers.location) {
+            return fulfill(result.headers.location);
           }
-          if (result.error_description) {
-            return reject(micropubError(result.error_description));
-          } else if (result.error) {
-            return reject(micropubError(result.error));
+          if (typeof result.data === 'string') {
+            result.data = qsParse(result.data);
+          }
+          if (result.data.error_description) {
+            return reject(micropubError(result.data.error_description));
+          } else if (result.data.error) {
+            return reject(micropubError(result.data.error));
           } else {
-            return fulfill(result);
+            if (
+              Object.keys(result.data).length === 0 &&
+              result.data.constructor === Object
+            ) {
+              return fulfill(null);
+            }
+            return fulfill(result.data);
           }
         })
         .catch(err =>
-          reject(micropubError('Error sending request', null, err)),
+          reject(
+            micropubError('Error sending request', err.response.status, err),
+          ),
         );
     });
   }
 
+  /**
+   * Posts a file to the media endpoint
+   * @param {Buffer|ReadableStream} file The file to post
+   * @return {promise} Resolves on success with the url of the created file, or null if could not read location
+   */
   postMedia(file) {
     return new Promise((fulfill, reject) => {
       const requirements = this.checkRequiredOptions([
@@ -433,22 +468,21 @@ class Micropub {
       }
 
       let request = {
+        url: this.options.mediaEndpoint,
         method: 'POST',
-        credentials: 'omit',
-        body: objectToFormData({ file: file }),
+        data: objectToFormData({ file: file }),
         headers: {
-          Authorization: 'Bearer ' + this.options.token,
-          Accept: '*/*',
+          authorization: 'Bearer ' + this.options.token,
+          accept: '*/*',
         },
       };
 
-      fetch(this.options.mediaEndpoint, request)
+      axios(request)
         .then(res => {
           if (res.status !== 201) {
             return reject(micropubError('Error creating media', res.status));
           }
-          const location =
-            res.headers.get('Location') || res.headers.get('location');
+          const location = res.headers.location;
           if (location) {
             return fulfill(location);
           } else {
@@ -460,10 +494,19 @@ class Micropub {
             );
           }
         })
-        .catch(err => reject(micropubError('Error sending request')));
+        .catch(err =>
+          reject(
+            micropubError('Error sending request', err.response.status, err),
+          ),
+        );
     });
   }
 
+  /**
+   * Querys the micropub endpoint, for the config for example
+   * @param {string} type The type passed the the micropub q parameter
+   * @return {promise} Resolves with the object that the server replied with
+   */
   query(type) {
     return new Promise((fulfill, reject) => {
       const requirements = this.checkRequiredOptions([
@@ -481,30 +524,31 @@ class Micropub {
       const url = appendQueryString(this.options.micropubEndpoint, { q: type });
 
       const request = {
+        url,
         method: 'GET',
-        credentials: 'omit',
         headers: {
-          Authorization: 'Bearer ' + this.options.token,
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-          Accept: 'application/json',
+          authorization: 'Bearer ' + this.options.token,
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          accept: 'application/json',
         },
-        // mode: 'cors',
       };
 
-      fetch(url, request)
-        .then(res => {
-          if (!res.ok) {
-            return reject(micropubError('Error getting ' + type, res.status));
-          }
-          return res.json();
-        })
-        .then(json => fulfill(json))
+      axios(request)
+        .then(res => fulfill(res.data))
         .catch(err =>
-          reject(micropubError('Error getting ' + type, null, err)),
+          reject(
+            micropubError('Error getting ' + type, err.response.status, err),
+          ),
         );
     });
   }
 
+  /**
+   * Query for the source of a post
+   * @param {string} url The url of the post to query
+   * @param {array} properties An array of properties to query for
+   * @return {promise} A promise which resolves with the returned mf2 json / properties
+   */
   querySource(url, properties = []) {
     return new Promise((fulfill, reject) => {
       const requirements = this.checkRequiredOptions([
@@ -526,25 +570,22 @@ class Micropub {
       });
 
       const request = {
+        url,
         method: 'GET',
-        credentials: 'omit',
         headers: {
-          Authorization: 'Bearer ' + this.options.token,
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-          Accept: 'application/json',
+          authorization: 'Bearer ' + this.options.token,
+          'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          accept: 'application/json',
         },
-        // mode: 'cors',
       };
 
-      fetch(url, request)
-        .then(res => {
-          if (!res.ok) {
-            return reject(micropubError('Error getting source', res.status));
-          }
-          return res.json();
-        })
-        .then(json => fulfill(json))
-        .catch(err => reject(micropubError('Error getting source', null, err)));
+      axios(request)
+        .then(res => fulfill(res.data))
+        .catch(err =>
+          reject(
+            micropubError('Error getting source', err.response.status, err),
+          ),
+        );
     });
   }
 }
