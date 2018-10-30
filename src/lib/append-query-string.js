@@ -1,4 +1,4 @@
-export default function appendQueryString(url, queryVars) {
+module.exports = function appendQueryString(url, queryVars) {
   const firstSeperator = url.indexOf('?') == -1 ? '?' : '&';
   let queryStringParts = [];
   for (var key in queryVars) {
@@ -12,4 +12,4 @@ export default function appendQueryString(url, queryVars) {
   }
   const queryString = queryStringParts.join('&');
   return url + firstSeperator + queryString;
-}
+};
