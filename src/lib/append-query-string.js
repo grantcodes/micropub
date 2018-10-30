@@ -3,9 +3,9 @@ module.exports = function appendQueryString(url, queryVars) {
   let queryStringParts = [];
   for (var key in queryVars) {
     if (Array.isArray(queryVars[key])) {
-      queryVars[key].forEach(val => {
+      for (const val of queryVars[key]) {
         queryStringParts.push(key + '[]=' + encodeURIComponent(val));
-      });
+      }
     } else {
       queryStringParts.push(key + '=' + encodeURIComponent(queryVars[key]));
     }

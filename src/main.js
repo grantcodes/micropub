@@ -4,17 +4,6 @@ const { parse: qsParse, stringify: qsStringify } = require('qs');
 const objectToFormData = require('./lib/object-to-form-data');
 const appendQueryString = require('./lib/append-query-string');
 
-// Node polyfills
-if (!global.FormData) {
-  global.FormData = require('form-data');
-}
-if (!global.DOMParser) {
-  global.DOMParser = require('jsdom/lib/jsdom/living').DOMParser;
-}
-if (!global.URL) {
-  global.URL = require('url').URL;
-}
-
 const defaultSettings = {
   me: '',
   scope: 'create delete update',
@@ -348,6 +337,13 @@ class Micropub {
           'application/json, application/x-www-form-urlencoded';
       } else if (type == 'multipart') {
         request.data = objectToFormData(object);
+        if (request.data.getHeaders) {
+          request.headers = Object.assign(
+            {},
+            request.headers,
+            request.data.getHeaders(),
+          );
+        }
         request.headers.accept =
           'application/json, application/x-www-form-urlencoded';
       }
@@ -364,6 +360,8 @@ class Micropub {
         throw result.data.error_description;
       } else if (result.data.error) {
         throw result.data.error;
+      } else if (result.data.location) {
+        return result.data.location;
       } else {
         if (
           Object.keys(result.data).length === 0 &&
@@ -398,12 +396,20 @@ class Micropub {
       let request = {
         url: this.options.mediaEndpoint,
         method: 'POST',
-        data: objectToFormData({ file: file }),
+        data: objectToFormData({ file }),
         headers: {
           authorization: 'Bearer ' + this.options.token,
           accept: '*/*',
         },
       };
+
+      if (request.data.getHeaders) {
+        request.headers = Object.assign(
+          {},
+          request.headers,
+          request.data.getHeaders(),
+        );
+      }
 
       const res = await axios(request);
       if (res.status !== 201) {

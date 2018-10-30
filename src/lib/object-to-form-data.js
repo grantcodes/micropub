@@ -1,4 +1,7 @@
-// const FormData = require('form-data');
+// Load node version of FormData if needed
+if (!global.FormData) {
+  global.FormData = require('form-data');
+}
 
 module.exports = function objectToFormData(
   object,
@@ -12,11 +15,11 @@ module.exports = function objectToFormData(
         key = name + '[' + key + ']';
       }
       if (Array.isArray(data)) {
-        data.forEach(arrayItem => {
+        for (const arrayItem of data) {
           const arrayData = {};
           arrayData[key + '[]'] = arrayItem;
           formData = objectToFormData(arrayData, formData);
-        });
+        }
       } else {
         formData.append(key, data);
       }
