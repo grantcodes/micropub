@@ -242,7 +242,7 @@ class Micropub {
         },
       };
 
-      const res = axios(request);
+      const res = await axios(request);
       if (res.status === 200) {
         return true;
       }

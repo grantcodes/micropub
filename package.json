@@ -1,6 +1,6 @@
 {
   "name": "micropub-helper",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "A simple helper class for creating micropub clients",
   "keywords": [
     "micropub",
