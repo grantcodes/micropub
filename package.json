@@ -22,8 +22,15 @@
     "qs": "^6.5.2",
     "rel-parser": "^1.0.2"
   },
+  "scripts": {
+    "test": "ava tests/index.js"
+  },
   "prettier": {
     "singleQuote": true,
     "trailingComma": "all"
+  },
+  "devDependencies": {
+    "ava": "^1.2.0",
+    "express": "^4.16.4"
   }
 }
