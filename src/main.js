@@ -175,12 +175,11 @@ class Micropub {
           'The token endpoint did not return the expected parameters',
         );
       }
-      // Check me is the same (removing any trailing slashes)
-      if (
-        result.me &&
-        result.me.replace(/\/+$/, '') !== this.options.me.replace(/\/+$/, '')
-      ) {
-        throw micropubError('The me values did not match');
+      // Check "me" values have the same hostname
+      let urlResult = new URL(result.me);
+      let urlOptions = new URL(this.options.me);
+      if (urlResult.hostname != urlOptions.hostname) {
+        throw micropubError('The me values do not share the same hostname');
       }
       // Successfully got the token
       this.options.token = result.access_token;
