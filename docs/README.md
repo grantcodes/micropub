@@ -288,3 +288,7 @@ This might not be 100% accurate as there are a lot of potential errors.
 * [myfreeweb](https://github.com/myfreeweb) - For fixing Link header handling and help with Accept headers
 * [00dani](https://github.com/00dani) - For fixing base tag support in the rel scraper
 * [pstuifzand](https://github.com/pstuifzand) - For fixing form encoded arrays
+
+## Links
+* [Source code](https://github.com/grantcodes/micropub/)
+* [Bug tracker](https://github.com/grantcodes/micropub/issues/)
