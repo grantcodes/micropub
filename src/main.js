@@ -463,7 +463,7 @@ class Micropub {
 
   /**
    * Query for the source of a post
-   * @param {string} url The url of the post to query
+   * @param {string|object} url The url of the post to query or an object of query variables to get a list of posts
    * @param {array} properties An array of properties to query for
    * @return {promise} A promise which resolves with the returned mf2 json / properties
    */
@@ -471,12 +471,26 @@ class Micropub {
     this.checkRequiredOptions(['token', 'micropubEndpoint']);
 
     try {
-      url = appendQueryString(this.options.micropubEndpoint, {
-        q: 'source',
-        url: url,
-        properties: properties,
-      });
-
+      if (typeof url === 'object') {
+        // Querying for a list of posts
+        url = appendQueryString(this.options.micropubEndpoint, {
+          q: 'source',
+          ...url,
+        });
+      } else if (typeof url === 'string' && url) {
+        // querying a single post
+        url = appendQueryString(this.options.micropubEndpoint, {
+          q: 'source',
+          url,
+          properties,
+        });
+      } else if (!url) {
+        url = appendQueryString(this.options.micropubEndpoint, {
+          q: 'source',
+        });
+      } else {
+        throw { response: { status: 'Error with source query parameters' } };
+      }
       const request = {
         url,
         method: 'GET',
