@@ -8,12 +8,24 @@ A [micropub](https://micropub.net/) helper library for JavaScript.
 
 Although this library is intended to be usable client side you will likely run into [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) issues so be careful about that.
 
+### Installation
+
+```bash
+npm install micropub-helper
+```
+
+or
+
+```bash
+yarn add micropub-helper
+```
+
 ### Setup
 
-The library is setup as an es6 class, and is initalized by passinging an object of options. The minimum requirements are `clientId`, `redirectUri` and `me`.
+The library is setup as an es6 class, and is initialized by passing an object of options. The minimum requirements are `clientId`, `redirectUri` and `me`.
 
 ```js
-import Micropub from 'micropub';
+import Micropub from 'micropub-helper';
 const micropub = new Micropub({
   clientId: 'https://mymicropubclientapp.com',
   redirectUri: 'https://mymicropubclientapp.com/indieauthhandler',
