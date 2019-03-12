@@ -32,10 +32,10 @@ If you already have other information stored such as the token and micropub endp
 - `token` - The authorization token
 - `authEndpoint` - The authorization endpoint
 - `tokenEndpoint` - The token endpoint to receive the access toke from
-- `micropubEndpoint` - The micropub enpoint
-- `mediaEndpoint` - The media enpoint
+- `micropubEndpoint` - The micropub endpoint
+- `mediaEndpoint` - The media endpoint
 
-You can directly retrieve and modify the options on an instanciated class with the `options` property:
+You can directly retrieve and modify the options on an instantiated class with the `options` property:
 
 ```js
 // Get the user domain
@@ -95,7 +95,7 @@ micropub
 
 ### Querying the micropub endpoint
 
-Once you have your token, you can send queries to the micropub endpoint. The most likely queries are the `config` and `syndicate-to` query. The result is retreived as an object.
+Once you have your token, you can send queries to the micropub endpoint. The most likely queries are the `config` and `syndicate-to` query. The result is retrieved as an object.
 
 ```js
 micropub
@@ -121,7 +121,7 @@ micropub
 
 #### The `source` query
 
-If the micropub endpoint supports it you can query individual posts. Since it is slighty different to a basic query there is a different method to query about a post.
+If the micropub endpoint supports it you can query individual posts. Since it is slightly different to a basic query there is a different method to query about a post.
 
 You can query all data on a post:
 
