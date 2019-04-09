@@ -88,7 +88,14 @@ class Micropub {
       // Get the base url from the given url
       let baseUrl = url;
       // Fetch the given url
-      const res = await axios({ url, method: 'get', responseType: 'text' });
+      const res = await axios({
+        url,
+        method: 'get',
+        responseType: 'text',
+        headers: {
+          accept: 'text/html,application/xhtml+xml',
+        },
+      });
       // Get rel links
       const rels = await relScraper(baseUrl, res.data, res.headers);
 
