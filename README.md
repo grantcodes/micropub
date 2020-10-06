@@ -1,6 +1,6 @@
-# Micropub.js
+## Micropub.js
 
-A [micropub](https://micropub.net/) helper library for JavaScript.
+A [micropub](https://micropub.net/) helper library for JavaScript
 
 ## Docs
 
