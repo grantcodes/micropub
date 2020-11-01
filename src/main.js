@@ -95,6 +95,7 @@ class Micropub {
         headers: {
           accept: 'text/html,application/xhtml+xml',
         },
+        timeout: 30000,
       });
       // Get rel links
       const rels = await relScraper(baseUrl, res.data, res.headers);
@@ -164,6 +165,7 @@ class Micropub {
           'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
           accept: 'application/json, application/x-www-form-urlencoded',
         },
+        timeout: 30000,
       };
       // This could maybe use the postMicropub method
       const res = await axios(request);
@@ -246,6 +248,7 @@ class Micropub {
         headers: {
           Authorization: 'Bearer ' + this.options.token,
         },
+        timeout: 30000,
       };
 
       const res = await axios(request);
@@ -330,6 +333,7 @@ class Micropub {
         headers: {
           authorization: 'Bearer ' + this.options.token,
         },
+        timeout: 30000,
       };
 
       if (type == 'json') {
@@ -407,6 +411,7 @@ class Micropub {
           authorization: 'Bearer ' + this.options.token,
           accept: '*/*',
         },
+        timeout: 60000,
       };
 
       if (request.data.getHeaders) {
@@ -455,6 +460,7 @@ class Micropub {
           'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
           accept: 'application/json',
         },
+        timeout: 30000,
       };
 
       const res = await axios(request);
@@ -506,6 +512,7 @@ class Micropub {
           'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
           accept: 'application/json',
         },
+        timeout: 30000,
       };
 
       const res = await axios(request);
