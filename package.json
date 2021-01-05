@@ -17,7 +17,7 @@
   "author": "Grant Richmond <mail@grant.codes> (https://grant.codes)",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "form-data": "^2.3.2",
     "qs": "^6.5.2",
     "rel-parser": "^1.0.2"
