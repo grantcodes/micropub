@@ -17,10 +17,10 @@
   "author": "Grant Richmond <mail@grant.codes> (https://grant.codes)",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.18.0",
-    "form-data": "^2.3.2",
-    "qs": "^6.5.2",
-    "rel-parser": "^1.0.2"
+    "axios": "^0.21.4",
+    "form-data": "^4.0.0",
+    "qs": "^6.10.1",
+    "rel-parser": "^1.1.0"
   },
   "scripts": {
     "test": "ava tests/index.js"
@@ -30,7 +30,7 @@
     "trailingComma": "all"
   },
   "devDependencies": {
-    "ava": "^1.2.0",
-    "express": "^4.16.4"
+    "ava": "^3.15.0",
+    "express": "^4.17.1"
   }
 }

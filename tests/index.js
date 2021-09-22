@@ -1,6 +1,6 @@
-import test from 'ava';
-import express from 'express';
-import Micropub from '../src/main';
+const test = require('ava');
+const express = require('express');
+const Micropub = require('../src/main');
 
 // const server = express();
 
@@ -15,7 +15,7 @@ import Micropub from '../src/main';
 /**
  * Tests that a method will throw an error if the required options are not set
  */
-test('Basic required fields', async t => {
+test('Basic required fields', async (t) => {
   const micropub = new Micropub();
   try {
     await micropub.getAuthUrl();
