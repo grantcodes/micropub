@@ -1,5 +1,6 @@
 const test = require('ava');
 const testServer = require('./_server');
+const serverData = require('./_server/data');
 const Micropub = require('../src/main');
 
 const baseOptions = {
@@ -12,10 +13,10 @@ const baseOptions = {
 const fullOptions = {
   ...baseOptions,
   token: 'token',
-  tokenEndpoint: 'http://localhost:3313/token',
-  authEndpoint: 'http://localhost:3313/auth',
-  micropubEndpoint: 'http://localhost:3313/micropub',
-  mediaEndpoint: 'http://localhost:3313/media',
+  tokenEndpoint: serverData.endpoints.token_endpoint,
+  authEndpoint: serverData.endpoints.authorization_endpoint,
+  micropubEndpoint: serverData.endpoints.micropub,
+  mediaEndpoint: serverData.endpoints.media,
 };
 
 testServer();
@@ -60,33 +61,74 @@ test('Get auth endpoint', async (t) => {
 });
 
 // TODO: Test returning non json and test returning invalid response.
-// TODO: Export this data from the fake server and compare it
 test('Get token', async (t) => {
   const micropub = new Micropub(fullOptions);
   const token = await micropub.getToken('code');
-  t.is(token, 'token');
+  t.is(token, serverData.token);
 });
 
-// TODO: Export this data from the fake server and compare it
 test('Query config', async (t) => {
   const micropub = new Micropub(fullOptions);
   const config = await micropub.query('config');
-  t.is(typeof config, 'object');
-  t.is(config['media-endpoint'], fullOptions.mediaEndpoint);
+  t.deepEqual(config, serverData.micropubConfig);
 });
 
-// TODO: Export this data from the fake server and compare it
 test('Query syndication targets', async (t) => {
   const micropub = new Micropub(fullOptions);
   const targets = await micropub.query('syndicate-to');
-  t.is(targets[0].uid, 'https://silo.example');
-  t.is(targets[0].name, 'Syndication Target');
+  t.deepEqual(targets, serverData.micropubConfig['syndicate-to']);
 });
 
-// TODO: Export this data from the fake server and compare it
 test('Query source', async (t) => {
   const micropub = new Micropub(fullOptions);
-  const mf2 = await micropub.querySource('http://localhost:3313/note');
-  t.is(mf2.type, ['h-entry']);
-  t.is(mf2.properties.content, ['This is a post']);
+  const post = await micropub.querySource(
+    serverData.mf2.note.properties.url[0],
+  );
+  t.deepEqual(post, serverData.mf2.note);
+});
+
+test('Query source content property', async (t) => {
+  const micropub = new Micropub(fullOptions);
+  const { content } = await micropub.querySource(
+    serverData.mf2.note.properties.url[0],
+    ['content'],
+  );
+  t.deepEqual(content, serverData.mf2.note.properties.content);
+});
+
+test('Query source list', async (t) => {
+  const micropub = new Micropub(fullOptions);
+  const { items } = await micropub.querySource();
+  t.deepEqual(items, serverData.mf2.list);
+});
+
+test('Create note json encoded', async (t) => {
+  const micropub = new Micropub(fullOptions);
+  const noteUrl = await micropub.create(serverData.mf2.note);
+  t.is(noteUrl, serverData.mf2.note.properties.url[0]);
+});
+
+test('Create note form encoded', async (t) => {
+  const micropub = new Micropub(fullOptions);
+  const noteUrl = await micropub.create(
+    {
+      h: 'entry',
+      content: serverData.mf2.note.properties.content[0],
+    },
+    'form',
+  );
+  t.is(noteUrl, serverData.mf2.note.properties.url[0]);
+});
+
+test('Delete note', async (t) => {
+  const micropub = new Micropub(fullOptions);
+  const res = await micropub.delete(serverData.mf2.note.properties.url[0]);
+  t.truthy(res);
+});
+
+test('Undelete note', async (t) => {
+  const micropub = new Micropub(fullOptions);
+  const noteUrl = serverData.mf2.note.properties.url[0];
+  const undeleteUrl = await micropub.undelete(noteUrl);
+  t.is(undeleteUrl, noteUrl);
 });

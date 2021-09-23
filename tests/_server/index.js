@@ -1,21 +1,7 @@
 const express = require('express');
+const data = require('./data');
 
-const micropubConfig = {
-  'media-endpoint': 'http://localhost:3313/media',
-  'syndicate-to': [
-    {
-      uid: 'https://silo.example',
-      name: 'Syndication Target',
-    },
-  ],
-};
-
-const exampleNote = {
-  type: ['h-entry'],
-  properties: {
-    content: ['This is a post'],
-  },
-};
+const { micropubConfig, endpoints, mf2, token } = data;
 
 function createServer() {
   const app = express();
@@ -29,7 +15,7 @@ function createServer() {
     return res.json({
       me: 'http://localhost:3313',
       scope: 'create update delete',
-      access_token: 'token',
+      access_token: token,
     });
   });
 
@@ -42,9 +28,22 @@ function createServer() {
     // Specific source query
     if (
       req?.query?.q === 'source' &&
-      req?.query?.url === 'http://localhost:3313/note'
+      req?.query?.url === mf2.note.properties.url[0]
     ) {
-      return res.json(exampleNote);
+      if (req.query.properties) {
+        const values = {};
+        for (const key of req.query.properties) {
+          values[key] = mf2.note.properties[key];
+        }
+        return res.json(values);
+      } else {
+        return res.json(mf2.note);
+      }
+    }
+
+    // Source list query
+    if (req?.query?.q === 'source') {
+      return res.json({ items: mf2.list });
     }
 
     // Other type of query
@@ -55,6 +54,60 @@ function createServer() {
     console.warn('Unhandled query', req.query);
 
     res.status(500).json({ error: 'Probably an invalid micropub request' });
+  });
+
+  app.post('/micropub', (req, res) => {
+    // Action handler
+    if (req.body.action) {
+      const { action, url } = req.body;
+
+      if (action === 'delete' && url) {
+        return res.sendStatus(200);
+      }
+
+      if (action === 'undelete' && url) {
+        return res.status(201).header('Location', mf2.note.properties.url[0]);
+      }
+
+      console.log('Action', req.body);
+
+      return res.status(501).json({
+        error: 'Micropub action ' + req.body.action + ' not supported',
+      });
+    }
+
+    // Create json
+    if (req.headers['content-type'] === 'application/json') {
+      if (JSON.stringify(mf2.note) !== JSON.stringify(req.body)) {
+        return res
+          .status(400)
+          .json({ error: 'Test server only accepts the note as a new post' });
+      }
+
+      return res.status(200).header('Location', mf2.note.properties.url[0]);
+    }
+
+    // Create form encoded
+    if (
+      req.headers['content-type'].startsWith(
+        'application/x-www-form-urlencoded',
+      )
+    ) {
+      if (
+        req.body.h !== 'entry' ||
+        req.body.content !== mf2.note.properties.content[0]
+      ) {
+        return res
+          .status(400)
+          .json({ error: 'Test server only accepts the note as a new post' });
+      }
+
+      return res.status(201).header('Location', mf2.note.properties.url[0]);
+    }
+
+    console.log(req.body, req.headers);
+
+    return res.status(500).json({ error: 'Error creating post' });
   });
 
   app.get('/', (req, res) => {
