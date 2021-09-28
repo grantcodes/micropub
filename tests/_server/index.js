@@ -1,7 +1,11 @@
 const express = require('express');
+const multer = require('multer');
 const data = require('./data');
 
-const { micropubConfig, endpoints, mf2, token } = data;
+const { micropubConfig, endpoints, mf2, token, fileUrl } = data;
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 function createServer() {
   const app = express();
@@ -20,16 +24,24 @@ function createServer() {
   });
 
   app.get('/micropub', (req, res) => {
+    // Plain get request - so check token
+    if (Object.keys(req.query).length === 0) {
+      if (req.headers.authorization === `Bearer ${token}`) {
+        return res.sendStatus(200);
+      }
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
     // Config query.
     if (req?.query?.q === 'config') {
       return res.json(micropubConfig);
     }
 
     // Specific source query
-    if (
-      req?.query?.q === 'source' &&
-      req?.query?.url === mf2.note.properties.url[0]
-    ) {
+    if (req?.query?.q === 'source' && req?.query?.url) {
+      if (req.query.url !== mf2.note.properties.url[0]) {
+        return res.status(404).json({ error: 'Not found' });
+      }
       if (req.query.properties) {
         const values = {};
         for (const key of req.query.properties) {
@@ -43,6 +55,20 @@ function createServer() {
 
     // Source list query
     if (req?.query?.q === 'source') {
+      // Support note post type query
+      if (req.query['post-type'] === 'note') {
+        return res.json({ items: [mf2.note] });
+      }
+
+      // Don't support other source queries
+      if (Object.keys(req.query).length > 1) {
+        console.warn('Unhandled source query', req.query);
+        return res.status(501).json({
+          error: 'Unsupported source query',
+        });
+      }
+
+      // Plain source query return list of items
       return res.json({ items: mf2.list });
     }
 
@@ -66,10 +92,29 @@ function createServer() {
       }
 
       if (action === 'undelete' && url) {
-        return res.status(201).header('Location', mf2.note.properties.url[0]);
+        return res
+          .status(201)
+          .header('Location', mf2.note.properties.url[0])
+          .json(mf2.note);
       }
 
-      console.log('Action', req.body);
+      if (action === 'update') {
+        if (
+          url === mf2.note.properties.url[0] &&
+          (req.body.replace || req.body.add || req.body.delete)
+        ) {
+          return res
+            .status(200)
+            .header('Location', mf2.note.properties.url[0])
+            .json(mf2.note);
+        } else {
+          return res.status(500).json({
+            error: 'Micropub update appears to be invalid',
+          });
+        }
+      }
+
+      console.log('Unhandled action', req.body);
 
       return res.status(501).json({
         error: 'Micropub action ' + req.body.action + ' not supported',
@@ -84,7 +129,10 @@ function createServer() {
           .json({ error: 'Test server only accepts the note as a new post' });
       }
 
-      return res.status(200).header('Location', mf2.note.properties.url[0]);
+      return res
+        .status(200)
+        .header('Location', mf2.note.properties.url[0])
+        .json(mf2.note);
     }
 
     // Create form encoded
@@ -102,12 +150,27 @@ function createServer() {
           .json({ error: 'Test server only accepts the note as a new post' });
       }
 
-      return res.status(201).header('Location', mf2.note.properties.url[0]);
+      return res
+        .status(201)
+        .header('Location', mf2.note.properties.url[0])
+        .json(mf2.note);
     }
 
-    console.log(req.body, req.headers);
+    console.log('Error creating post', {
+      body: req.body,
+      headers: req.headers,
+    });
 
     return res.status(500).json({ error: 'Error creating post' });
+  });
+
+  app.post('/media', upload.single('file'), (req, res) => {
+    // Make sure file is valid.
+    if (!req.file || req.file.truncated || !req.file.buffer) {
+      return res.status(500).json({ error: 'Invalid media file' });
+    }
+
+    return res.status(201).header('Location', fileUrl).json({ url: fileUrl });
   });
 
   app.get('/', (req, res) => {

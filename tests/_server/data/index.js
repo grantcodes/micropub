@@ -12,4 +12,5 @@ module.exports = {
     list: [note, article],
   },
   token: 'token',
+  fileUrl: 'http://localhost:3313/media/image.jpg',
 };
