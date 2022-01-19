@@ -1,6 +1,6 @@
-const test = require('ava');
-const FormData = require('form-data');
-const objectToFormData = require('../../src/lib/object-to-form-data');
+import test from 'ava';
+import { FormData } from 'formdata-polyfill/esm.min.js';
+import { objectToFormData } from '../../src/lib/object-to-form-data';
 
 // TODO: These tests aren't really that great, they don't check what is contained in the FormData response.
 

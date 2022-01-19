@@ -1,8 +1,11 @@
-const express = require('express');
-const multer = require('multer');
-const data = require('./data');
+import * as path from 'path';
+import express from 'express';
+import multer from 'multer';
+import { data } from './data/data.js';
 
-const { micropubConfig, endpoints, mf2, token, fileUrl } = data;
+const __dirname = path.resolve(path.dirname('.'));
+
+const { micropubConfig, mf2, token, fileUrl } = data;
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -13,7 +16,8 @@ function createServer() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  app.use('*', express.static('static'));
+  app.use('/js', express.static(__dirname + '/src'));
+  app.use('/', express.static(__dirname + '/tests/_server/static'));
 
   app.post('/token', (req, res) => {
     return res.json({
@@ -174,7 +178,10 @@ function createServer() {
   });
 
   app.get('/', (req, res) => {
-    res.sendFile('./static/index.html', { root: __dirname });
+    console.log(__dirname);
+    res.sendFile('index.html', {
+      root: __dirname + '/tests/_server/static',
+    });
   });
 
   app.listen(3313);
@@ -182,4 +189,4 @@ function createServer() {
   return app;
 }
 
-module.exports = createServer;
+export default createServer;

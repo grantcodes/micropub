@@ -9,4 +9,4 @@ const article = {
   },
 };
 
-module.exports = article;
+export default article;

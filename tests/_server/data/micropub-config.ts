@@ -9,4 +9,4 @@ const micropubConfig = {
   categories: ['foo', 'bar'],
 };
 
-module.exports = micropubConfig;
+export default micropubConfig;

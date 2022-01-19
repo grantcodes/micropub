@@ -1,5 +1,5 @@
-const test = require('ava');
-const appendQueryString = require('../../src/lib/append-query-string');
+import test from 'ava';
+import { appendQueryString } from '../../src/lib/append-query-string';
 
 test('Append to basic url', async (t) => {
   const url = 'https://example.com';

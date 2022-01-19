@@ -6,4 +6,4 @@ const exampleNote = {
   },
 };
 
-module.exports = exampleNote;
+export default exampleNote;

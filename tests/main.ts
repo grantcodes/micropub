@@ -1,7 +1,8 @@
-const test = require('ava');
-const testServer = require('./_server/index');
-const serverData = require('./_server/data');
-const Micropub = require('../src/main');
+import { createReadStream } from 'fs';
+import test from 'ava';
+import testServer from './_server/server';
+import { data as serverData } from './_server/data/data';
+import Micropub from '../src/main';
 
 const baseOptions = {
   clientId: 'https://test.com',
@@ -40,7 +41,7 @@ test('Basic required fields', async (t) => {
 
 test('Check required options function', async (t) => {
   const micropub = new Micropub();
-  micropub.options.foo = 'bar';
+  micropub.setOptions({ foo: 'bar' });
 
   try {
     micropub.checkRequiredOptions(['bar']);
@@ -90,7 +91,7 @@ test('Verify token', async (t) => {
   const micropub = new Micropub(fullOptions);
   const valid = await micropub.verifyToken();
   t.truthy(valid);
-  micropub.options.token = 'invalid';
+  micropub.setOptions({ token: 'invalid' });
   try {
     await micropub.verifyToken();
     t.fail();
@@ -148,10 +149,9 @@ test('Undelete note', async (t) => {
 // });
 
 test('Post media', async (t) => {
-  const fs = require('fs');
   const micropub = new Micropub(fullOptions);
   const filePath = __dirname + '/_server/static/image.png';
-  const file = fs.createReadStream(filePath);
+  const file = createReadStream(filePath);
   const url = await micropub.postMedia(file);
   t.is(url, serverData.fileUrl);
 });
@@ -211,7 +211,7 @@ test('Custom query source', async (t) => {
 test('Malformed query source', async (t) => {
   const micropub = new Micropub(fullOptions);
   try {
-    await micropub.querySource(1);
+    await micropub.querySource('1');
     t.fail();
   } catch (err) {
     t.deepEqual(err, {

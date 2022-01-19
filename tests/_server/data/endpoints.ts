@@ -6,4 +6,4 @@ const endpoints = {
   media: 'http://localhost:3313/media',
 };
 
-module.exports = endpoints;
+export default endpoints;

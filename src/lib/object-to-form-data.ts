@@ -1,13 +1,13 @@
 // Load node version of FormData if needed
-if (!global.FormData) {
-  global.FormData = require('form-data');
-}
+import { FormData as NodeFormData } from 'formdata-polyfill/esm.min.js';
 
-module.exports = function objectToFormData(
-  object,
-  formData = new FormData(),
-  name = false,
-) {
+const FormData = typeof window !== 'undefined' ? window.FormData : NodeFormData;
+
+function objectToFormData(
+  object: any,
+  formData: FormData = new FormData(),
+  name: string | null = null,
+): FormData {
   for (let key in object) {
     if (object.hasOwnProperty(key)) {
       const data = object[key];
@@ -26,4 +26,6 @@ module.exports = function objectToFormData(
     }
   }
   return formData;
-};
+}
+
+export { objectToFormData };
