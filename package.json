@@ -1,6 +1,6 @@
 {
   "name": "micropub-helper",
-  "version": "2.0.0",
+  "version": "2.0.0-beta.0",
   "type": "module",
   "description": "A simple helper class for creating micropub clients",
   "keywords": [
@@ -43,6 +43,7 @@
   },
   "devDependencies": {
     "@ava/typescript": "^3.0.1",
+    "@grantcodes/commit": "^1.0.7",
     "@playwright/test": "^1.17.1",
     "@types/node": "^17.0.2",
     "ava": "^4.0.0-rc.1",
