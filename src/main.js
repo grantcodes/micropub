@@ -196,7 +196,7 @@ class Micropub {
     } catch (err) {
       throw micropubError(
         'Error requesting token endpoint',
-        err.response.status,
+        err && err.response ? err.response.status : null,
         err,
       );
     }
@@ -435,7 +435,7 @@ class Micropub {
     } catch (err) {
       throw micropubError(
         typeof err === 'string' ? err : 'Error creating media',
-        err.response.status,
+        err && err.response ? err.response.status : null,
         err,
       );
     }
