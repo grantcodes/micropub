@@ -1,22 +1,22 @@
-import axios, { AxiosRequestConfig, AxiosError } from 'axios';
-import relScraper from 'rel-parser';
-import { parse as qsParse, stringify as qsStringify } from 'qs';
-import { objectToFormData } from './lib/object-to-form-data';
-import { appendQueryString } from './lib/append-query-string';
-import { ReadStream } from 'fs';
+import axios, { AxiosRequestConfig, AxiosError } from 'axios'
+import { relParser } from 'rel-parser'
+import { parse as qsParse, stringify as qsStringify } from 'qs'
+import { objectToFormData } from './lib/object-to-form-data.js'
+import { appendQueryString } from './lib/append-query-string.js'
+import { ReadStream } from 'fs'
 
 interface MicropubOptions {
-  [key: string]: string | undefined;
-  me: string;
-  scope: string;
-  token: string;
-  authEndpoint: string;
-  tokenEndpoint: string;
-  micropubEndpoint: string;
-  mediaEndpoint?: string;
-  state?: string;
-  clientId?: string;
-  redirectUri?: string;
+  [key: string]: string | undefined
+  me: string
+  scope: string
+  token: string
+  authEndpoint: string
+  tokenEndpoint: string
+  micropubEndpoint: string
+  mediaEndpoint?: string
+  state?: string
+  clientId?: string
+  redirectUri?: string
 }
 
 const defaultSettings: MicropubOptions = {
@@ -26,30 +26,30 @@ const defaultSettings: MicropubOptions = {
   authEndpoint: '',
   tokenEndpoint: '',
   micropubEndpoint: '',
-};
+}
 
 interface MicropubEndpointsReponse {
-  [key: string]: string | null;
-  auth: string | null;
-  token: string | null;
-  micropub: string | null;
+  [key: string]: string | null
+  auth: string | null
+  token: string | null
+  micropub: string | null
 }
 
 // interface Expected
 
-type MicropubPostCreateType = 'json' | 'form' | 'multipart';
+type MicropubPostCreateType = 'json' | 'form' | 'multipart'
 
-type MicropubResponse = null | string | any;
+type MicropubResponse = null | string | any
 
 class MicropubError extends Error {
-  status: number;
-  error: any;
+  status: number
+  error: any
 
-  constructor(message: string, status: number = 0, error: any = null) {
-    super(message);
-    this.name = 'MicropubError';
-    this.status = status;
-    this.error = error;
+  constructor (message: string, status: number = 0, error: any = null) {
+    super(message)
+    this.name = 'MicropubError'
+    this.status = status || null
+    this.error = error
   }
 }
 
@@ -57,30 +57,30 @@ class MicropubError extends Error {
  * A micropub helper class
  */
 class Micropub {
-  #options: MicropubOptions;
+  #options: MicropubOptions
 
   /**
    * Micropub class constructor
    * @param {object} userSettings Settings supplied for this micropub client
    */
-  constructor(userSettings: Partial<MicropubOptions> = {}) {
-    this.setOptions({ ...defaultSettings, ...userSettings });
+  constructor (userSettings: Partial<MicropubOptions> = {}) {
+    this.setOptions({ ...defaultSettings, ...userSettings })
   }
 
   /**
    * Sets the options for the class
    * @param options Object of options to set.
    */
-  setOptions(options: Partial<MicropubOptions>) {
-    this.#options = { ...this.#options, ...options };
+  setOptions (options: Partial<MicropubOptions>) {
+    this.#options = { ...this.#options, ...options }
   }
 
   /**
    * Get the options object
    * @returns {MicropubOptions} The options object
    */
-  getOptions(): MicropubOptions {
-    return { ...this.#options };
+  getOptions (): MicropubOptions {
+    return { ...this.#options }
   }
 
   /**
@@ -88,24 +88,22 @@ class Micropub {
    * @param  {array} requirements An array of option keys to check
    * @return {object}             An object with boolean pass property and array missing property listing missing options
    */
-  checkRequiredOptions(requirements: Array<string>): true {
-    let missing = [];
-    let pass = true;
+  checkRequiredOptions (requirements: Array<string>): true {
+    let missing = []
+    let pass = true
     for (const optionName of requirements) {
-      const option = this.#options[optionName];
+      const option = this.#options[optionName]
       if (!option) {
-        pass = false;
-        missing.push(optionName);
+        pass = false
+        missing.push(optionName)
       }
     }
 
     if (!pass) {
-      throw new MicropubError(
-        'Missing required options: ' + missing.join(', '),
-      );
+      throw new MicropubError('Missing required options: ' + missing.join(', '))
     }
 
-    return true;
+    return true
   }
 
   /**
@@ -113,10 +111,10 @@ class Micropub {
    * @param  {string} url The url to scrape
    * @return {Promise}    Passes an object of endpoints on success: auth, token and micropub
    */
-  async getEndpointsFromUrl(url: string): Promise<MicropubEndpointsReponse> {
+  async getEndpointsFromUrl (url: string): Promise<MicropubEndpointsReponse> {
     try {
       // Get the base url from the given url
-      let baseUrl = url;
+      let baseUrl = url
       // Fetch the given url
       const res = await axios({
         url,
@@ -126,35 +124,38 @@ class Micropub {
           accept: 'text/html,application/xhtml+xml',
         },
         timeout: 30000,
-      });
+      })
+
       // Get rel links
-      const rels = await relScraper(baseUrl, res.data, res.headers);
+      const rels = await relParser(baseUrl, res.data, {
+        ...(res.headers as any),
+      })
 
       // Save necessary endpoints.
-      this.setOptions({ me: url });
+      this.setOptions({ me: url })
 
       const endpoints: MicropubEndpointsReponse = {
-        micropub: rels?.micropub ?? null,
-        auth: rels?.authorization_endpoint ?? null,
-        token: rels?.token_endpoint ?? null,
-      };
+        micropub: rels?.micropub?.[0] ?? null,
+        auth: rels?.authorization_endpoint?.[0] ?? null,
+        token: rels?.token_endpoint?.[0] ?? null,
+      }
 
       if (endpoints.micropub && endpoints.auth && endpoints.token) {
         this.setOptions({
           micropubEndpoint: endpoints.micropub,
           tokenEndpoint: endpoints.token,
           authEndpoint: endpoints.auth,
-        });
-        return endpoints;
+        })
+        return endpoints
       }
 
-      throw new MicropubError('Error getting required endpoints from url');
+      throw new MicropubError('Error getting required endpoints from url')
     } catch (err: any) {
       throw new MicropubError(
         'Error fetching url',
         err?.response?.status ?? 0,
         err,
-      );
+      )
     }
   }
 
@@ -163,15 +164,15 @@ class Micropub {
    * @param {string} code A code received from the auth endpoint
    * @return {promise} Promise which resolves with the access token on success
    */
-  async getToken(code: string): Promise<string> {
+  async getToken (code: string): Promise<string> {
     this.checkRequiredOptions([
       'me',
       'clientId',
       'redirectUri',
       'tokenEndpoint',
-    ]);
+    ])
 
-    const { me, clientId, redirectUri, tokenEndpoint } = this.getOptions();
+    const { me, clientId, redirectUri, tokenEndpoint } = this.getOptions()
 
     try {
       const data = {
@@ -180,7 +181,7 @@ class Micropub {
         code: code,
         client_id: clientId,
         redirect_uri: redirectUri,
-      };
+      }
 
       const request: AxiosRequestConfig = {
         url: tokenEndpoint,
@@ -191,39 +192,39 @@ class Micropub {
           accept: 'application/json, application/x-www-form-urlencoded',
         },
         timeout: 30000,
-      };
+      }
       // This could maybe use the postMicropub method
-      const res = await axios(request);
-      let result = res.data;
+      const res = await axios(request)
+      let result = res.data
       // Parse the response from the indieauth server
       if (typeof result === 'string') {
-        result = qsParse(result);
+        result = qsParse(result)
       }
       if (result.error_description) {
-        throw new MicropubError(result.error_description);
+        throw new MicropubError(result.error_description)
       } else if (result.error) {
-        throw new MicropubError(result.error);
+        throw new MicropubError(result.error)
       }
       if (!result.me || !result.scope || !result.access_token) {
         throw new MicropubError(
           'The token endpoint did not return the expected parameters',
-        );
+        )
       }
       // Check "me" values have the same hostname
-      let urlResult = new URL(result.me);
-      let urlOptions = new URL(me);
+      let urlResult = new URL(result.me)
+      let urlOptions = new URL(me)
       if (urlResult.hostname != urlOptions.hostname) {
-        throw new MicropubError('The me values do not share the same hostname');
+        throw new MicropubError('The me values do not share the same hostname')
       }
       // Successfully got the token
-      this.setOptions({ token: result.access_token });
-      return result.access_token;
+      this.setOptions({ token: result.access_token })
+      return result.access_token
     } catch (err: any | AxiosError) {
       throw new MicropubError(
         'Error requesting token endpoint',
         err?.response?.status ?? 0,
         err,
-      );
+      )
     }
   }
 
@@ -231,11 +232,11 @@ class Micropub {
    * Get the authentication url based on the set options
    * @return {string|boolean} The authentication url or false on missing options
    */
-  async getAuthUrl(): Promise<string> {
-    this.checkRequiredOptions(['me', 'state']);
+  async getAuthUrl (): Promise<string> {
+    this.checkRequiredOptions(['me', 'state'])
     try {
-      const { me } = this.getOptions();
-      await this.getEndpointsFromUrl(me);
+      const { me } = this.getOptions()
+      await this.getEndpointsFromUrl(me)
 
       this.checkRequiredOptions([
         'me',
@@ -243,10 +244,10 @@ class Micropub {
         'scope',
         'clientId',
         'redirectUri',
-      ]);
+      ])
 
       const { clientId, redirectUri, scope, state, authEndpoint } =
-        this.getOptions();
+        this.getOptions()
 
       const authParams = {
         me: me,
@@ -255,11 +256,11 @@ class Micropub {
         response_type: 'code',
         scope: scope,
         state: state,
-      };
+      }
 
-      return appendQueryString(authEndpoint, authParams);
+      return appendQueryString(authEndpoint, authParams)
     } catch (err) {
-      throw new MicropubError('Error getting auth url', 0, err);
+      throw new MicropubError('Error getting auth url', 0, err)
     }
   }
 
@@ -267,10 +268,10 @@ class Micropub {
    * Verify the stored access token
    * @return {promise} A promise that resolves true or rejects
    */
-  async verifyToken(): Promise<boolean> {
-    this.checkRequiredOptions(['token', 'micropubEndpoint']);
+  async verifyToken (): Promise<boolean> {
+    this.checkRequiredOptions(['token', 'micropubEndpoint'])
 
-    const { token, micropubEndpoint } = this.getOptions();
+    const { token, micropubEndpoint } = this.getOptions()
 
     try {
       const request: AxiosRequestConfig = {
@@ -280,19 +281,19 @@ class Micropub {
           Authorization: 'Bearer ' + token,
         },
         timeout: 30000,
-      };
-
-      const res = await axios(request);
-      if (res.status === 200) {
-        return true;
       }
-      throw res;
+
+      const res = await axios(request)
+      if (res.status === 200) {
+        return true
+      }
+      throw res
     } catch (err: AxiosError | any) {
       throw new MicropubError(
         'Error verifying token',
         err?.response?.status ?? 0,
         err,
-      );
+      )
     }
   }
 
@@ -302,11 +303,11 @@ class Micropub {
    * @param {string} type The type of form encoding to use
    * @return {promise} Resolves on success with the url of the post or null if could not read the location header.
    */
-  async create(
+  async create (
     post: any,
     type: MicropubPostCreateType = 'json',
   ): Promise<MicropubResponse> {
-    return await this.postMicropub(post, type);
+    return await this.postMicropub(post, type)
   }
 
   /**
@@ -315,16 +316,12 @@ class Micropub {
    * @param {object} update The micropub update object
    * @return {promise} Resolves on success with the url of the post or null if could not read the location header.
    */
-  async update(url: string, update: any): Promise<MicropubResponse> {
-    return await this.postMicropub(
-      Object.assign(
-        {
-          action: 'update',
-          url: url,
-        },
-        update,
-      ),
-    );
+  async update (url: string, update: any): Promise<MicropubResponse> {
+    return await this.postMicropub({
+      ...update,
+      action: 'update',
+      url: url,
+    })
   }
 
   /**
@@ -332,11 +329,11 @@ class Micropub {
    * @param {string} url The url of a post to delete
    * @return {promise} Resolves on successful deletion
    */
-  async delete(url: string): Promise<MicropubResponse> {
+  async delete (url: string): Promise<MicropubResponse> {
     return await this.postMicropub({
       action: 'delete',
       url: url,
-    });
+    })
   }
 
   /**
@@ -344,11 +341,11 @@ class Micropub {
    * @param {string} url The url of a post to undelete
    *  @return {promise} Resolves on successful undeletion
    */
-  async undelete(url: string): Promise<MicropubResponse> {
+  async undelete (url: string): Promise<MicropubResponse> {
     return await this.postMicropub({
       action: 'undelete',
       url: url,
-    });
+    })
   }
 
   /**
@@ -357,13 +354,13 @@ class Micropub {
    * @param {string} type The type of form encoding for the post
    * @return {promise} Resolves with the returned location header or null on success
    */
-  async postMicropub(
+  async postMicropub (
     object: any,
     type: MicropubPostCreateType = 'json',
   ): Promise<MicropubResponse> {
-    this.checkRequiredOptions(['token', 'micropubEndpoint']);
+    this.checkRequiredOptions(['token', 'micropubEndpoint'])
 
-    const { token, micropubEndpoint } = this.getOptions();
+    const { token, micropubEndpoint } = this.getOptions()
 
     try {
       let request: AxiosRequestConfig = {
@@ -373,73 +370,70 @@ class Micropub {
           authorization: 'Bearer ' + token,
         },
         timeout: 30000,
-      };
+      }
 
       if (type == 'json') {
-        request.data = JSON.stringify(object);
-        request.headers['content-type'] = 'application/json';
+        request.data = JSON.stringify(object)
+        request.headers['content-type'] = 'application/json'
       } else if (type == 'form') {
-        request.data = qsStringify(object, { arrayFormat: 'brackets' });
+        request.data = qsStringify(object, { arrayFormat: 'brackets' })
         request.headers['content-type'] =
-          'application/x-www-form-urlencoded;charset=UTF-8';
+          'application/x-www-form-urlencoded;charset=UTF-8'
         request.headers.accept =
-          'application/json, application/x-www-form-urlencoded';
+          'application/json, application/x-www-form-urlencoded'
       } else if (type == 'multipart') {
-        request.data = objectToFormData(object);
+        request.data = objectToFormData(object)
         if (request.data.getHeaders) {
-          request.headers = Object.assign(
-            {},
-            request.headers,
-            request.data.getHeaders(),
-          );
+          request.headers = {
+            ...request.headers,
+            ...request.data.getHeaders(),
+          }
         }
         request.headers.accept =
-          'application/json, application/x-www-form-urlencoded';
+          'application/json, application/x-www-form-urlencoded'
       }
 
-      const result = await axios(request);
+      const result = await axios(request)
 
       if (result.headers.location) {
-        return result.headers.location;
+        return result.headers.location
       }
       if (typeof result.data === 'string') {
-        result.data = qsParse(result.data);
+        result.data = qsParse(result.data)
       }
       if (result.data.error_description) {
-        throw result.data.error_description;
+        throw result.data.error_description
       } else if (result.data.error) {
-        throw result.data.error;
+        throw result.data.error
       } else if (result.data.location) {
-        return result.data.location;
+        return result.data.location
       } else {
         if (
           Object.keys(result.data).length === 0 &&
           result.data.constructor === Object
         ) {
-          return null;
+          return null
         }
-        return result.data;
+        return result.data
       }
     } catch (err: AxiosError | any) {
-      let message = 'Error sending request';
+      let message = 'Error sending request'
       if (typeof err === 'string') {
-        message = err;
+        message = err
       }
-      throw new MicropubError(message, err?.response?.status ?? 0, err);
+      throw new MicropubError(message, err?.response?.status ?? 0, err)
     }
   }
 
   /**
    * Posts a file to the media endpoint
-   * @param {Buffer|ReadableStream} file The file to post
+   * @param {Blob} file The file to post
    * @return {promise} Resolves on success with the url of the created file, or null if could not read location
    */
-  async postMedia(
-    file: Buffer | ReadableStream | ReadStream,
-  ): Promise<MicropubResponse> {
-    this.checkRequiredOptions(['token', 'mediaEndpoint']);
+  async postMedia (file: Blob): Promise<MicropubResponse> {
+    this.checkRequiredOptions(['token', 'mediaEndpoint'])
 
-    const { token, mediaEndpoint } = this.getOptions();
+    const { token, mediaEndpoint } = this.getOptions()
 
     try {
       let request: AxiosRequestConfig = {
@@ -447,36 +441,36 @@ class Micropub {
         method: 'POST',
         data: objectToFormData({ file }),
         headers: {
-          authorization: 'Bearer ' + token,
           accept: '*/*',
+          authorization: 'Bearer ' + token,
+          'content-type': 'multipart/form-data',
         },
         timeout: 60000,
-      };
+      }
 
       if (request.data.getHeaders) {
-        request.headers = Object.assign(
-          {},
-          request.headers,
-          request.data.getHeaders(),
-        );
+        request.headers = {
+          ...request.headers,
+          ...request.data.getHeaders(),
+        }
       }
 
-      const res = await axios(request);
+      const res = await axios(request)
       if (res.status !== 201) {
-        throw res;
+        throw res
       }
-      const location = res.headers.location;
+      const location = res.headers.location
       if (location) {
-        return location;
+        return location
       } else {
-        throw 'Media endpoint did not return a location';
+        throw 'Media endpoint did not return a location'
       }
     } catch (err: AxiosError | any) {
       throw new MicropubError(
         typeof err === 'string' ? err : 'Error creating media',
         err?.response?.status ?? 0,
         err,
-      );
+      )
     }
   }
 
@@ -485,15 +479,15 @@ class Micropub {
    * @param {string} type The type passed the the micropub q parameter
    * @return {promise} Resolves with the object that the server replied with
    */
-  async query(type: string): Promise<MicropubResponse> {
-    this.checkRequiredOptions(['token', 'micropubEndpoint']);
+  async query (type: string): Promise<MicropubResponse> {
+    this.checkRequiredOptions(['token', 'micropubEndpoint'])
 
-    const { token, micropubEndpoint } = this.getOptions();
+    const { token, micropubEndpoint } = this.getOptions()
 
     try {
       const url = appendQueryString(micropubEndpoint, {
         q: type,
-      });
+      })
 
       const request: AxiosRequestConfig = {
         url,
@@ -504,16 +498,16 @@ class Micropub {
           accept: 'application/json',
         },
         timeout: 30000,
-      };
+      }
 
-      const res = await axios(request);
-      return res.data;
+      const res = await axios(request)
+      return res.data
     } catch (err: AxiosError | any) {
       throw new MicropubError(
         'Error getting ' + type,
         err?.response?.status ?? 0,
         err,
-      );
+      )
     }
   }
 
@@ -523,13 +517,13 @@ class Micropub {
    * @param {array} properties An array of properties to query for
    * @return {promise} A promise which resolves with the returned mf2 json / properties
    */
-  async querySource(
+  async querySource (
     url?: string | object,
     properties: Array<string> = [],
   ): Promise<MicropubResponse> {
-    this.checkRequiredOptions(['token', 'micropubEndpoint']);
+    this.checkRequiredOptions(['token', 'micropubEndpoint'])
 
-    const { token, micropubEndpoint } = this.getOptions();
+    const { token, micropubEndpoint } = this.getOptions()
 
     try {
       if (typeof url === 'object') {
@@ -537,20 +531,20 @@ class Micropub {
         url = appendQueryString(micropubEndpoint, {
           q: 'source',
           ...url,
-        });
+        })
       } else if (typeof url === 'string' && url) {
         // querying a single post
         url = appendQueryString(micropubEndpoint, {
           q: 'source',
           url,
           properties,
-        });
+        })
       } else if (!url) {
         url = appendQueryString(micropubEndpoint, {
           q: 'source',
-        });
+        })
       } else {
-        throw { response: { status: 'Error with source query parameters' } };
+        throw { response: { status: 'Error with source query parameters' } }
       }
       const request: AxiosRequestConfig = {
         url,
@@ -561,18 +555,18 @@ class Micropub {
           accept: 'application/json',
         },
         timeout: 30000,
-      };
+      }
 
-      const res = await axios(request);
-      return res.data;
+      const res = await axios(request)
+      return res.data
     } catch (err: AxiosError | any) {
       throw new MicropubError(
         'Error getting source',
         err?.response?.status ?? 0,
         err,
-      );
+      )
     }
   }
 }
 
-export default Micropub;
+export default Micropub
