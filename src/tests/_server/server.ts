@@ -24,7 +24,7 @@ function createServer (): express.Application {
     return res.json({
       me: 'http://localhost:3313',
       scope: 'create update delete',
-      access_token: token,
+      access_token: token
     })
   })
 
@@ -69,7 +69,7 @@ function createServer (): express.Application {
       if (Object.keys(req.query).length > 1) {
         console.warn('Unhandled source query', req.query)
         return res.status(501).json({
-          error: 'Unsupported source query',
+          error: 'Unsupported source query'
         })
       }
 
@@ -112,7 +112,7 @@ function createServer (): express.Application {
             .json(mf2.note)
         } else {
           return res.status(500).json({
-            error: 'Micropub update appears to be invalid',
+            error: 'Micropub update appears to be invalid'
           })
         }
       }
@@ -120,7 +120,7 @@ function createServer (): express.Application {
       console.log('Unhandled action', req.body)
 
       return res.status(501).json({
-        error: 'Micropub action ' + req.body.action + ' not supported',
+        error: 'Micropub action ' + req.body.action + ' not supported'
       })
     }
 
@@ -141,7 +141,7 @@ function createServer (): express.Application {
     // Create form encoded
     if (
       req.headers['content-type'].startsWith(
-        'application/x-www-form-urlencoded',
+        'application/x-www-form-urlencoded'
       )
     ) {
       if (
@@ -161,7 +161,7 @@ function createServer (): express.Application {
 
     console.log('Error creating post', {
       body: req.body,
-      headers: req.headers,
+      headers: req.headers
     })
 
     return res.status(500).json({ error: 'Error creating post' })
@@ -179,7 +179,7 @@ function createServer (): express.Application {
   app.get('/', (req, res) => {
     console.log(__dirname)
     res.sendFile('index.html', {
-      root: __dirname + '/tests/_server/static',
+      root: __dirname + '/tests/_server/static'
     })
   })
 

@@ -3,10 +3,10 @@ const micropubConfig = {
   'syndicate-to': [
     {
       uid: 'https://silo.example',
-      name: 'Syndication Target',
-    },
+      name: 'Syndication Target'
+    }
   ],
-  categories: ['foo', 'bar'],
-};
+  categories: ['foo', 'bar']
+}
 
-export default micropubConfig;
+export default micropubConfig

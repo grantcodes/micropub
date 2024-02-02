@@ -1,7 +1,7 @@
 function objectToFormData (
   object: any,
   formData: FormData = new FormData(),
-  name: string | null = null,
+  name: string | null = null
 ): FormData {
   for (let key in object) {
     if (object.hasOwnProperty(key)) {

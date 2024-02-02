@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import test from 'ava'
 import { createServer } from './_server/server.js'
 import { data as serverData } from './_server/data/data.js'
-import Micropub from '../src/main.js'
+import Micropub from '../main.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -12,7 +12,7 @@ const baseOptions = {
   clientId: 'https://test.com',
   redirectUri: 'https://test.com/redirect',
   me: 'http://localhost:3313',
-  state: 'state',
+  state: 'state'
 }
 
 const fullOptions = {
@@ -21,7 +21,7 @@ const fullOptions = {
   tokenEndpoint: serverData.endpoints.token_endpoint,
   authEndpoint: serverData.endpoints.authorization_endpoint,
   micropubEndpoint: serverData.endpoints.micropub,
-  mediaEndpoint: serverData.endpoints.media,
+  mediaEndpoint: serverData.endpoints.media
 }
 
 const testServer = createServer()
@@ -115,9 +115,9 @@ test('Create note form encoded', async t => {
   const noteUrl = await micropub.create(
     {
       h: 'entry',
-      content: serverData.mf2.note.properties.content[0],
+      content: serverData.mf2.note.properties.content[0]
     },
-    'form',
+    'form'
   )
   t.is(noteUrl, serverData.mf2.note.properties.url[0])
 })
@@ -125,7 +125,7 @@ test('Create note form encoded', async t => {
 test('Update note', async t => {
   const micropub = new Micropub(fullOptions)
   const res = await micropub.update(serverData.mf2.note.properties.url[0], {
-    replace: { content: ['Replaced content'] },
+    replace: { content: ['Replaced content'] }
   })
   t.truthy(res)
   t.is(res, serverData.mf2.note.properties.url[0])
@@ -192,7 +192,7 @@ test('Query source content property', async t => {
   const micropub = new Micropub(fullOptions)
   const { content } = await micropub.querySource(
     serverData.mf2.note.properties.url[0],
-    ['content'],
+    ['content']
   )
   t.deepEqual(content, serverData.mf2.note.properties.content)
 })

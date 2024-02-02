@@ -3,7 +3,6 @@ import { relParser } from 'rel-parser'
 import { parse as qsParse, stringify as qsStringify } from 'qs'
 import { objectToFormData } from './lib/object-to-form-data.js'
 import { appendQueryString } from './lib/append-query-string.js'
-import { ReadStream } from 'fs'
 
 interface MicropubOptions {
   [key: string]: string | undefined
@@ -42,13 +41,13 @@ type MicropubPostCreateType = 'json' | 'form' | 'multipart'
 type MicropubResponse = null | string | any
 
 class MicropubError extends Error {
-  status: number
+  status: number | null
   error: any
 
   constructor (message: string, status: number = 0, error: any = null) {
     super(message)
     this.name = 'MicropubError'
-    this.status = status || null
+    this.status = status === 0 ? null : status
     this.error = error
   }
 }
@@ -88,8 +87,8 @@ class Micropub {
    * @param  {array} requirements An array of option keys to check
    * @return {object}             An object with boolean pass property and array missing property listing missing options
    */
-  checkRequiredOptions (requirements: Array<string>): true {
-    let missing = []
+  checkRequiredOptions (requirements: string[]): true {
+    const missing = []
     let pass = true
     for (const optionName of requirements) {
       const option = this.#options[optionName]
@@ -114,7 +113,7 @@ class Micropub {
   async getEndpointsFromUrl (url: string): Promise<MicropubEndpointsReponse> {
     try {
       // Get the base url from the given url
-      let baseUrl = url
+      const baseUrl = url
       // Fetch the given url
       const res = await axios({
         url,
@@ -177,8 +176,8 @@ class Micropub {
     try {
       const data = {
         grant_type: 'authorization_code',
-        me: me,
-        code: code,
+        me,
+        code,
         client_id: clientId,
         redirect_uri: redirectUri,
       }
@@ -211,8 +210,8 @@ class Micropub {
         )
       }
       // Check "me" values have the same hostname
-      let urlResult = new URL(result.me)
-      let urlOptions = new URL(me)
+      const urlResult = new URL(result.me)
+      const urlOptions = new URL(me)
       if (urlResult.hostname != urlOptions.hostname) {
         throw new MicropubError('The me values do not share the same hostname')
       }
@@ -250,12 +249,12 @@ class Micropub {
         this.getOptions()
 
       const authParams = {
-        me: me,
+        me,
         client_id: clientId,
         redirect_uri: redirectUri,
         response_type: 'code',
-        scope: scope,
-        state: state,
+        scope,
+        state,
       }
 
       return appendQueryString(authEndpoint, authParams)
@@ -320,7 +319,7 @@ class Micropub {
     return await this.postMicropub({
       ...update,
       action: 'update',
-      url: url,
+      url,
     })
   }
 
@@ -332,7 +331,7 @@ class Micropub {
   async delete (url: string): Promise<MicropubResponse> {
     return await this.postMicropub({
       action: 'delete',
-      url: url,
+      url,
     })
   }
 
@@ -344,7 +343,7 @@ class Micropub {
   async undelete (url: string): Promise<MicropubResponse> {
     return await this.postMicropub({
       action: 'undelete',
-      url: url,
+      url,
     })
   }
 
@@ -363,7 +362,7 @@ class Micropub {
     const { token, micropubEndpoint } = this.getOptions()
 
     try {
-      let request: AxiosRequestConfig = {
+      const request: AxiosRequestConfig = {
         url: micropubEndpoint,
         method: 'POST',
         headers: {
@@ -436,7 +435,7 @@ class Micropub {
     const { token, mediaEndpoint } = this.getOptions()
 
     try {
-      let request: AxiosRequestConfig = {
+      const request: AxiosRequestConfig = {
         url: mediaEndpoint,
         method: 'POST',
         data: objectToFormData({ file }),
@@ -519,7 +518,7 @@ class Micropub {
    */
   async querySource (
     url?: string | object,
-    properties: Array<string> = [],
+    properties: string[] = [],
   ): Promise<MicropubResponse> {
     this.checkRequiredOptions(['token', 'micropubEndpoint'])
 

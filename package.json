@@ -1,17 +1,24 @@
 {
   "name": "micropub-helper",
   "version": "2.0.0-beta.0",
-  "type": "module",
   "description": "A simple helper class for creating micropub clients",
   "keywords": [
     "micropub",
     "indieweb"
   ],
+  "type": "module",
+  "main": "dist/main.cjs",
+  "module": "dist/main.js",
+  "types": "dist/main.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/main.js",
+      "import": "./dist/main.mjs",
+      "types": "./dist/main.d.ts"
+    }
+  },
   "homepage": "https://github.com/grantcodes/micropub",
   "bugs": "https://github.com/grantcodes/micropub/issues",
-  "module": "./build/esm/main.js",
-  "main": "./build/cjs/main.js",
-  "types": "build/esm/main.d.ts",
   "browserslist": "> 1%, not dead",
   "browser": {
     "jsdom/lib/jsdom/living": false,
@@ -30,13 +37,14 @@
     "rel-parser": "^2.0.0"
   },
   "scripts": {
-    "build:esm": "tsc -p tsconfig.json",
-    "build:cjs": "tsc -p tsconfig-cjs.json",
-    "build:tests": "tsc -p tests/tsconfig.json && cp -r tests/_server/static build/tests/tests/_server/",
-    "build": "npm run build:esm & npm run build:cjs",
-    "prepublish": "npm run build",
-    "test:run": "c8 ava --timeout=30s",
-    "test": "npm run build:tests && npm run test:run",
+    "build": "tsup",
+    "watch": "tsup --watch",
+    "fix": "run-s fix:lint",
+    "fix:lint": "ts-standard --fix src",
+    "test": "run-s test:lint test:build test:unit",
+    "test:build": "tsup --env.TEST=yes",
+    "test:lint": "ts-standard src",
+    "test:unit": "ava",
     "test-server": "tsc -w ./tests/_server/run.ts -outdir ./build/tests/_server",
     "test-server-2": "tsc -w ./tests/_server/run.ts --module es2020 --moduleResolution node --esModuleInterop  -outdir ./build/tests/_server & nodemon -q -w build build/tests/_server/run.js"
   },
@@ -51,21 +59,26 @@
     "@types/node": "^20.11.16",
     "ava": "^6.1.1",
     "c8": "^9.1.0",
-    "esbuild": "^0.20.0",
     "express": "^4.18.2",
     "multer": "^1.4.4",
     "nodemon": "^3.0.3",
+    "npm-run-all": "^4.1.5",
+    "ts-standard": "^12.0.2",
+    "tsup": "^8.0.1",
     "typescript": "^5.3.3"
   },
+  "files": [
+    "dist/**/*",
+    "!**/*.test.*",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md"
+  ],
   "ava": {
-    "files": [
-      "build/tests/tests/**/*",
-      "!build/tests/tests/_server"
-    ],
     "typescript": {
       "compile": false,
       "rewritePaths": {
-        "src/": "build/tests/src/"
+        "src/": "tmp/tests/"
       }
     }
   }

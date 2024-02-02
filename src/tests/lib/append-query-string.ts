@@ -1,12 +1,12 @@
 import test from 'ava'
-import { appendQueryString } from '../../src/lib/append-query-string.js'
+import { appendQueryString } from '../../lib/append-query-string.js'
 
 test('Append to basic url', async t => {
   const url = 'https://example.com'
   const params = {
     array: ['foo', 'bar'],
     number: 202,
-    longString: 'This is a long string :)',
+    longString: 'This is a long string :)'
   }
   const actual = appendQueryString(url, params)
   const expect =
@@ -19,7 +19,7 @@ test('Append to url with existing params', async t => {
   const params = {
     array: ['foo', 'bar'],
     number: 202,
-    longString: 'This is a long string :)',
+    longString: 'This is a long string :)'
   }
   const actual = appendQueryString(url, params)
   const expect =
