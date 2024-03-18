@@ -1,11 +1,16 @@
 import { readFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import test from 'ava'
+import { Server } from 'node:http'
+import anyTest, { TestFn } from 'ava'
 import { createServer } from './_server/server.js'
 import { data as serverData } from './_server/data/data.js'
+import { MicropubError } from '../lib/micropub-error.js'
 import Micropub from '../main.js'
 
+const test = anyTest as TestFn<{ server: Server }>
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const baseOptions = {
@@ -24,8 +29,16 @@ const fullOptions = {
   mediaEndpoint: serverData.endpoints.media
 }
 
-const testServer = createServer()
-const testServerInstance = testServer.listen(3313)
+test.before(t => {
+  const testServer = createServer()
+  const testServerInstance = testServer.listen(3313)
+
+  t.context = { server: testServerInstance }
+})
+
+test.after(async t => {
+  await t.context.server.close()
+})
 
 /**
  * Tests that a method will throw an error if the required options are not set
@@ -36,8 +49,8 @@ test('Basic required fields', async t => {
   try {
     await micropub.getAuthUrl()
     return t.fail()
-  } catch (err) {
-    if (err.message && err.message.startsWith('Missing required options')) {
+  } catch (err: MicropubError | any) {
+    if (err instanceof MicropubError && err.message.startsWith('Missing required options')) {
       return t.pass()
     }
   }
@@ -51,7 +64,7 @@ test('Check required options function', async t => {
   try {
     micropub.checkRequiredOptions(['bar'])
     t.fail()
-  } catch (err) {
+  } catch (err: MicropubError | any) {
     t.is(err.error, null)
     t.is(err.message, 'Missing required options: bar')
     t.is(err.status, null)
@@ -98,7 +111,7 @@ test('Verify token', async t => {
   try {
     await micropub.verifyToken()
     t.fail()
-  } catch (err) {
+  } catch (err: MicropubError | any) {
     t.is(err.message, 'Error verifying token')
     t.is(err.status, 401)
   }
@@ -131,6 +144,7 @@ test('Update note', async t => {
   t.is(res, serverData.mf2.note.properties.url[0])
 })
 
+// TODO: Failing
 test('Delete note', async t => {
   const micropub = new Micropub(fullOptions)
   const res = await micropub.delete(serverData.mf2.note.properties.url[0])
@@ -144,16 +158,9 @@ test('Undelete note', async t => {
   t.is(undeleteUrl, noteUrl)
 })
 
-// TODO: Test postMicropub function?
-// test('Core postMicropub method', async (t) => {
-//   const micropub = new Micropub(fullOptions);
-//   const res = await micropub.postMicropub({}).catch(console.info);
-//   t.truthy(res)
-// });
-
 test('Post media', async t => {
   const micropub = new Micropub(fullOptions)
-  const filePath = __dirname + '/_server/static/image.png'
+  const filePath = __dirname + '/../image.png'
   const buffer = readFileSync(filePath)
   const url = await micropub.postMedia(new Blob([buffer]))
   t.is(url, serverData.fileUrl)
@@ -176,7 +183,7 @@ test('Query handles error', async t => {
   try {
     await micropub.query('throw-error')
     t.fail()
-  } catch (err) {
+  } catch (err: MicropubError | any) {
     t.is(err.message, 'Error getting throw-error')
     t.truthy(err.status > 399)
   }
@@ -214,7 +221,7 @@ test('Malformed query source', async t => {
   try {
     await micropub.querySource('1')
     t.fail()
-  } catch (err) {
+  } catch (err: MicropubError | any) {
     t.is(err.message, 'Error getting source')
     t.is(err.status, 404)
   }
@@ -225,10 +232,8 @@ test('Query source returns error', async t => {
   try {
     await micropub.querySource('doesnt-exist')
     t.fail()
-  } catch (err) {
+  } catch (err: MicropubError | any) {
     t.is(err.message, 'Error getting source')
     t.is(err.status, 404)
   }
 })
-
-test.after('close test server', () => testServerInstance.close())

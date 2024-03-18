@@ -1,17 +1,18 @@
-import * as path from 'path'
+import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import express from 'express'
 import multer from 'multer'
 import { data } from './data/data.js'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const { micropubConfig, mf2, token, fileUrl } = data
 
-const storage = multer.memoryStorage()
-const upload = multer({ storage })
-
 function createServer (): express.Application {
+  const storage = multer.memoryStorage()
+  const upload = multer({ storage })
+
   const app = express()
 
   app.use(express.json())
@@ -43,13 +44,15 @@ function createServer (): express.Application {
     }
 
     // Specific source query
-    if (req?.query?.q === 'source' && req?.query?.url) {
+    if (req?.query?.q === 'source' && req?.query?.url !== undefined) {
       if (req.query.url !== mf2.note.properties.url[0]) {
         return res.status(404).json({ error: 'Not found' })
       }
-      if (req.query.properties) {
-        const values = {}
+      if (req.query.properties !== undefined && typeof req.query.properties === 'object') {
+        const values: any = {}
+        // @ts-expect-error
         for (const key of req.query.properties) {
+          // @ts-expect-error
           values[key] = mf2.note.properties[key]
         }
         return res.json(values)
@@ -78,7 +81,9 @@ function createServer (): express.Application {
     }
 
     // Other type of query
-    if (req?.query?.q && micropubConfig[req.query.q]) {
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+    if (req?.query?.q && typeof req.query.q === 'string' && req.query.q in micropubConfig) {
+      // @ts-expect-error
       return res.json(micropubConfig[req.query.q])
     }
 
@@ -87,14 +92,14 @@ function createServer (): express.Application {
 
   app.post('/micropub', (req, res) => {
     // Action handler
-    if (req.body.action) {
+    if (req.body.action !== undefined) {
       const { action, url } = req.body
 
-      if (action === 'delete' && url) {
-        return res.sendStatus(200)
+      if (action === 'delete' && url !== undefined) {
+        return res.sendStatus(204)
       }
 
-      if (action === 'undelete' && url) {
+      if (action === 'undelete' && url !== undefined) {
         return res
           .status(201)
           .header('Location', mf2.note.properties.url[0])
@@ -104,7 +109,8 @@ function createServer (): express.Application {
       if (action === 'update') {
         if (
           url === mf2.note.properties.url[0] &&
-          (req.body.replace || req.body.add || req.body.delete)
+          (req.body.replace as boolean || req.body.add as boolean || req.body.delete as boolean)
+
         ) {
           return res
             .status(200)
@@ -119,8 +125,10 @@ function createServer (): express.Application {
 
       console.log('Unhandled action', req.body)
 
+      const actionString: string = typeof req.body.action === 'string' ? req.body.action : 'unknown'
+
       return res.status(501).json({
-        error: 'Micropub action ' + req.body.action + ' not supported'
+        error: 'Micropub action ' + actionString + ' not supported'
       })
     }
 
@@ -139,8 +147,9 @@ function createServer (): express.Application {
     }
 
     // Create form encoded
+    const contentType = req?.headers?.['content-type'] ?? ''
     if (
-      req.headers['content-type'].startsWith(
+      contentType.startsWith(
         'application/x-www-form-urlencoded'
       )
     ) {
@@ -169,7 +178,7 @@ function createServer (): express.Application {
 
   app.post('/media', upload.single('file'), (req, res) => {
     // Make sure file is valid.
-    if (!req.file || req.file.truncated || !req.file.buffer) {
+    if (req?.file?.buffer === undefined || req?.file?.mimetype === undefined) {
       return res.status(500).json({ error: 'Invalid media file' })
     }
 
@@ -177,9 +186,8 @@ function createServer (): express.Application {
   })
 
   app.get('/', (req, res) => {
-    console.log(__dirname)
     res.sendFile('index.html', {
-      root: __dirname + '/tests/_server/static'
+      root: __dirname
     })
   })
 

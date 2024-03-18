@@ -4,20 +4,18 @@ function objectToFormData (
   name: string | null = null
 ): FormData {
   for (let key in object) {
-    if (object.hasOwnProperty(key)) {
-      const data = object[key]
-      if (name) {
-        key = name + '[' + key + ']'
+    const data = object[key]
+    if (name !== null && name !== '') {
+      key = name + '[' + key + ']'
+    }
+    if (Array.isArray(data)) {
+      for (const arrayItem of data) {
+        const arrayData: any = {}
+        arrayData[key + '[]'] = arrayItem
+        formData = objectToFormData(arrayData, formData)
       }
-      if (Array.isArray(data)) {
-        for (const arrayItem of data) {
-          const arrayData = {}
-          arrayData[key + '[]'] = arrayItem
-          formData = objectToFormData(arrayData, formData)
-        }
-      } else {
-        formData.append(key, data)
-      }
+    } else {
+      formData.append(key, data)
     }
   }
   return formData
