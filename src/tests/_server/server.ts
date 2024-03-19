@@ -17,8 +17,7 @@ function createServer (): express.Application {
 
   app.use(express.json())
   app.use(express.urlencoded({ extended: true }))
-
-  app.use('/js', express.static(__dirname + '../../src'))
+  // app.get('/js/main.global.js', (req, res) => res.sendFile('main.global.js', { root: __dirname + '/' }))
   app.use('/', express.static(__dirname + '/static'))
 
   app.post('/token', (req, res) => {

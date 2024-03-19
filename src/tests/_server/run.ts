@@ -1,7 +1,11 @@
 import { createServer } from './server.js'
 
-console.log(
-  'Running Micropub test server in standalone mode on http://localhost:3313'
-)
+const port = process.env.PORT ?? 3313
 
-createServer()
+const app = createServer()
+
+app.listen(process.env.PORT ?? 3313, () => {
+  console.log(
+    `Running Micropub test server in standalone mode on http://localhost:${port}`
+  )
+})

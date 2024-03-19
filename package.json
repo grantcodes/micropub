@@ -44,8 +44,7 @@
     "test:build": "tsup --env.TEST=yes",
     "test:lint": "ts-standard src",
     "test:unit": "ava",
-    "test-server": "tsc -w ./tests/_server/run.ts -outdir ./build/tests/_server",
-    "test-server-2": "tsc -w ./tests/_server/run.ts --module es2020 --moduleResolution node --esModuleInterop  -outdir ./build/tests/_server & nodemon -q -w build build/tests/_server/run.js"
+    "test-server": "tsup --env.TEST=yes --watch --onSuccess 'node ./tmp/tests/tests/_server/run.js'"
   },
   "prettier": {
     "singleQuote": true,
