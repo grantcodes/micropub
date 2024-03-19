@@ -1,9 +1,9 @@
-name: Create Release
+name: Create Prerelease
 
 on:
   push:
     branches:
-      - main
+      - next
 
 jobs:
   release-please:
@@ -14,6 +14,8 @@ jobs:
         with:
           release-type: node
           package-name: 'micropub-helper'
+          prerelease: true
+          default-branch: next
 
       - uses: actions/checkout@v3
         name: Checkout code
@@ -38,7 +40,7 @@ jobs:
         name: Run build
         if: ${{ steps.release.outputs.release_created }}
 
-      - run: npm publish
+      - run: npm publish --tag next
         name: Publish to NPM
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
