@@ -5,7 +5,7 @@ export default defineConfig(options => {
     return {
       outDir: 'tmp/tests',
       entry: ['src', "!src/tests/_server/static/**/*"],
-      external: ['ava', 'express', 'multer', 'node:url', 'node:path', 'node:fs'],
+      external: ['express', 'multer', 'node:url', 'node:path', 'node:fs'],
       format: ['esm'],
       publicDir: 'src/tests/_server/static'
     }

@@ -1,7 +1,10 @@
-import test from 'ava'
+import test from 'node:test'
+import assert from 'node:assert/strict'
 import { appendQueryString } from '../../lib/append-query-string.js'
 
-test('Append to basic url', async t => {
+/* eslint-disable @typescript-eslint/no-floating-promises */
+
+test('Append to basic url', () => {
   const url = 'https://example.com'
   const params = {
     array: ['foo', 'bar'],
@@ -11,10 +14,10 @@ test('Append to basic url', async t => {
   const actual = appendQueryString(url, params)
   const expect =
     'https://example.com?array[]=foo&array[]=bar&number=202&longString=This%20is%20a%20long%20string%20%3A)'
-  t.is(actual, expect)
+  assert.equal(actual, expect)
 })
 
-test('Append to url with existing params', async t => {
+test('Append to url with existing params', () => {
   const url = 'https://example.com?existing=exists'
   const params = {
     array: ['foo', 'bar'],
@@ -24,5 +27,5 @@ test('Append to url with existing params', async t => {
   const actual = appendQueryString(url, params)
   const expect =
     'https://example.com?existing=exists&array[]=foo&array[]=bar&number=202&longString=This%20is%20a%20long%20string%20%3A)'
-  t.is(actual, expect)
+  assert.equal(actual, expect)
 })
