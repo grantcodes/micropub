@@ -7,13 +7,13 @@
     "indieweb"
   ],
   "type": "module",
-  "main": "dist/main.cjs",
-  "module": "dist/main.js",
-  "types": "dist/main.d.ts",
+  "main": "./dist/main.cjs",
+  "module": "./dist/main.js",
+  "types": "./dist/main.d.ts",
   "exports": {
     ".": {
-      "require": "./dist/main.js",
-      "import": "./dist/main.mjs",
+      "require": "./dist/main.cjs",
+      "import": "./dist/main.js",
       "types": "./dist/main.d.ts"
     }
   },

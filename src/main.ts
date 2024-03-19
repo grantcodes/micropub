@@ -584,3 +584,4 @@ class Micropub {
 }
 
 export default Micropub
+export { Micropub }
