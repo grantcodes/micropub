@@ -3,7 +3,6 @@ import { stringify as qsStringify } from 'qs'
 import { MicropubError } from './lib/micropub-error.js'
 import { objectToFormData } from './lib/object-to-form-data.js'
 import { appendQueryString } from './lib/append-query-string.js'
-import { getTimeoutAbortController } from './lib/get-timeout-abort-controller.js'
 
 interface MicropubOptions {
   [key: string]: string | undefined
@@ -26,6 +25,12 @@ const defaultSettings: MicropubOptions = {
   authEndpoint: '',
   tokenEndpoint: '',
   micropubEndpoint: ''
+}
+
+interface MicropubRequestInit extends RequestInit {
+  url?: string
+  timeout?: number
+  headers: Headers // Require to always use Headers object
 }
 
 interface MicropubEndpointsReponse {
@@ -95,6 +100,37 @@ class Micropub {
     return true
   }
 
+  private async fetch (options: MicropubRequestInit): Promise<Response> {
+    let { url, timeout = 300000, ...request } = options
+
+    const { token, micropubEndpoint } = this.getOptions()
+
+    // Add a timeout to the fetch request
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeout)
+    request.signal = controller.signal
+
+    // Default to requesting the micropub endpoint
+    if (url === undefined) {
+      url = micropubEndpoint
+    }
+
+    // Add authorization header if a token is set
+    if (token !== '') {
+      if (request.headers === undefined) {
+        request.headers = new Headers()
+      }
+      request.headers.set('Authorization', 'Bearer ' + token)
+    }
+
+    // Do the default fetch
+    const result = await fetch(url, request)
+
+    // Success, clear the timeout and return the result
+    clearTimeout(timer)
+    return result
+  }
+
   /**
    * Get the various endpoints needed from the given url
    * @param  {string} url The url to scrape
@@ -104,23 +140,20 @@ class Micropub {
     try {
       // Get the base url from the given url
       const baseUrl = url
-      const abortController = getTimeoutAbortController(30000)
+
       // Fetch the given url
-      const res = await fetch(url, {
-        headers: {
+      const res = await this.fetch({
+        url,
+        headers: new Headers({
           accept: 'text/html,application/xhtml+xml'
-        },
-        method: 'GET',
-        mode: 'cors',
-        signal: abortController.signal
+        }),
+        method: 'GET'
       })
 
       const resHtml = await res.text()
 
       // Get rel links
-      const rels = await relParser(baseUrl, resHtml, {
-        ...(res.headers as any)
-      })
+      const rels = await relParser(baseUrl, resHtml, Object.fromEntries(res.headers))
 
       // Save necessary endpoints.
       this.setOptions({ me: url })
@@ -152,7 +185,7 @@ class Micropub {
       return endpoints
     } catch (err: any) {
       throw new MicropubError(
-        'Error fetching url',
+        err?.message ?? 'Error getting endpoints from url',
         err?.response?.status ?? 0,
         err
       )
@@ -183,19 +216,17 @@ class Micropub {
         redirect_uri: redirectUri
       }
 
-      const abortController = getTimeoutAbortController(30000)
-
-      const request: RequestInit = {
+      const request: MicropubRequestInit = {
+        url: tokenEndpoint,
         method: 'POST',
         body: qsStringify(data),
-        headers: {
+        headers: new Headers({
           'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
           accept: 'application/json'
-        },
-        signal: abortController.signal
+        })
       }
       // This could maybe use the postMicropub method
-      const res = await fetch(tokenEndpoint, request)
+      const res = await this.fetch(request)
 
       interface GetTokenSuccessResponse {
         access_token: string
@@ -236,7 +267,7 @@ class Micropub {
       return result.access_token
     } catch (err: any | Error) {
       throw new MicropubError(
-        'Error requesting token endpoint',
+        err.message ?? 'Error requesting token endpoint',
         err?.response?.status ?? 0,
         err
       )
@@ -286,19 +317,13 @@ class Micropub {
   async verifyToken (): Promise<boolean> {
     this.checkRequiredOptions(['token', 'micropubEndpoint'])
 
-    const { token, micropubEndpoint } = this.getOptions()
-
     try {
-      const abortController = getTimeoutAbortController(30000)
-      const request: RequestInit = {
+      const request: MicropubRequestInit = {
         method: 'GET',
-        headers: {
-          Authorization: 'Bearer ' + token
-        },
-        signal: abortController.signal
+        headers: new Headers({})
       }
 
-      const res = await fetch(micropubEndpoint, request)
+      const res = await this.fetch(request)
 
       if (res.ok) {
         return true
@@ -307,7 +332,7 @@ class Micropub {
       throw new MicropubError('Token verification failed', res.status)
     } catch (err: Error | any) {
       throw new MicropubError(
-        'Error verifying token',
+        err?.message ?? 'Error verifying token',
         err?.response?.status ?? 0,
         err
       )
@@ -377,36 +402,28 @@ class Micropub {
   ): Promise<MicropubResponse> {
     this.checkRequiredOptions(['token', 'micropubEndpoint'])
 
-    const { token, micropubEndpoint } = this.getOptions()
-
     try {
-      const abortController = getTimeoutAbortController(30000)
-      const request: RequestInit = {
+      const request: MicropubRequestInit = {
         method: 'POST',
-        signal: abortController.signal
+        headers: new Headers()
       }
-      const requestHeaders = new Headers({
-        authorization: 'Bearer ' + token
-      })
 
       if (format === 'json') {
         request.body = JSON.stringify(object)
-        requestHeaders.set('Content-Type', 'application/json')
+        request.headers.set('Content-Type', 'application/json')
       } else if (format === 'form') {
         request.body = qsStringify(object, { arrayFormat: 'brackets' })
-        requestHeaders.set('Content-Type',
+        request.headers.set('Content-Type',
           'application/x-www-form-urlencoded;charset=UTF-8')
-        requestHeaders.set('Accept',
+        request.headers.set('Accept',
           'application/json, application/x-www-form-urlencoded')
       } else if (format === 'multipart') {
         request.body = objectToFormData(object)
-        requestHeaders.set('Accept',
+        request.headers.set('Accept',
           'application/json, application/x-www-form-urlencoded')
       }
 
-      request.headers = requestHeaders
-
-      const result = await fetch(micropubEndpoint, request)
+      const result = await this.fetch(request)
 
       // Check for a location header.
       const location = result.headers.get('location')
@@ -436,25 +453,22 @@ class Micropub {
   async postMedia (file: Blob): Promise<MicropubResponse> {
     this.checkRequiredOptions(['token', 'mediaEndpoint'])
 
-    const { token, mediaEndpoint } = this.getOptions()
+    const { mediaEndpoint } = this.getOptions()
 
     if (typeof mediaEndpoint === 'undefined' || mediaEndpoint === '') {
       throw new MicropubError('No media endpoint set')
     }
 
     try {
-      const abortController = getTimeoutAbortController(60000)
-      const request: RequestInit = {
+      const request: MicropubRequestInit = {
+        url: mediaEndpoint,
         method: 'POST',
         body: objectToFormData({ file }),
-        headers: {
-          accept: '*/*',
-          authorization: 'Bearer ' + token
-        },
-        signal: abortController.signal
+        headers: new Headers(),
+        timeout: 3 * 60 * 1000 // 3 minute timeout for media uploads.
       }
 
-      const res = await fetch(mediaEndpoint, request)
+      const res = await this.fetch(request)
 
       if (!res.ok) {
         throw new MicropubError('Media endpoint returned an error', res.status)
@@ -484,26 +498,23 @@ class Micropub {
   async query (queryType: string): Promise<MicropubResponse> {
     this.checkRequiredOptions(['token', 'micropubEndpoint'])
 
-    const { token, micropubEndpoint } = this.getOptions()
+    const { micropubEndpoint } = this.getOptions()
 
     try {
       const url = appendQueryString(micropubEndpoint, {
         q: queryType
       })
 
-      const abortController = getTimeoutAbortController(30000)
-
-      const request: RequestInit = {
+      const request: MicropubRequestInit = {
+        url,
         method: 'GET',
-        headers: {
-          authorization: 'Bearer ' + token,
+        headers: new Headers({
           'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
           accept: 'application/json'
-        },
-        signal: abortController.signal
+        })
       }
 
-      const res = await fetch(url, request)
+      const res = await this.fetch(request)
 
       if (!res.ok) {
         throw new MicropubError('Query did not return successfully', res.status, await res.text())
@@ -531,7 +542,7 @@ class Micropub {
   ): Promise<MicropubResponse> {
     this.checkRequiredOptions(['token', 'micropubEndpoint'])
 
-    const { token, micropubEndpoint } = this.getOptions()
+    const { micropubEndpoint } = this.getOptions()
 
     try {
       if (typeof url === 'object') {
@@ -555,18 +566,16 @@ class Micropub {
       } else {
         throw new MicropubError('Unsupported source query parameters')
       }
-      const abortController = getTimeoutAbortController(30000)
-      const request: RequestInit = {
+      const request: MicropubRequestInit = {
+        url,
         method: 'GET',
-        headers: {
-          authorization: 'Bearer ' + token,
+        headers: new Headers({
           'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
           accept: 'application/json'
-        },
-        signal: abortController.signal
+        })
       }
 
-      const res = await fetch(url, request)
+      const res = await this.fetch(request)
 
       if (!res.ok) {
         throw new MicropubError('Query source did not return successfully', res.status, await res.text())

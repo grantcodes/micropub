@@ -1,14 +1,12 @@
-import { it, describe, before, after } from 'node:test'
+import { it, describe, mock, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { Server } from 'node:http'
-import { createServer } from './_server/server.js'
-import { data as serverData } from './_server/data/data.js'
+import { data as serverData } from './_data/data.js'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { MicropubError } from '../lib/micropub-error.js'
-import Micropub from '../main.js'
+import { Micropub } from '../main.js'
 
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
@@ -18,7 +16,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const baseOptions = {
   clientId: 'https://test.com',
   redirectUri: 'https://test.com/redirect',
-  me: 'http://localhost:3313',
+  me: 'https://example.com',
   state: 'state'
 }
 
@@ -31,25 +29,17 @@ const fullOptions = {
   mediaEndpoint: serverData.endpoints.media
 }
 
-let testServerInstance: null | Server = null
+// let testServerInstance: null | Server = null
 
 describe('Micropub', () => {
-  before(() => {
-    const testServer = createServer()
-    testServerInstance = testServer.listen(3313)
-  })
-
-  after(async () => {
-    if (testServerInstance !== null) {
-      await testServerInstance.close()
-      testServerInstance = null
-    }
+  afterEach(() => {
+    mock.reset()
   })
 
   /**
    * Tests that a method will throw an error if the required options are not set
    */
-  it('Basic required fields', async t => {
+  it('Basic required fields', async () => {
     const micropub = new Micropub()
 
     try {
@@ -60,7 +50,7 @@ describe('Micropub', () => {
     }
   })
 
-  it('Check required options function', async t => {
+  it('Check required options function', () => {
     const micropub = new Micropub()
     micropub.setOptions({ foo: 'bar' })
 
@@ -75,7 +65,31 @@ describe('Micropub', () => {
     assert.ok(micropub.checkRequiredOptions(['foo']))
   })
 
-  it('Get endpoints from url', async t => {
+  it('Get endpoints from url html', async () => {
+    mock.method(global, 'fetch', () => {
+      return {
+        status: 200,
+        text: () => serverData.pageHtml,
+        headers: new Headers({ 'Content-Type': 'text/html' })
+      }
+    })
+
+    const micropub = new Micropub(baseOptions)
+    const endpoints = await micropub.getEndpointsFromUrl(baseOptions.me)
+    assert.equal(endpoints.auth, fullOptions.authEndpoint)
+    assert.equal(endpoints.token, fullOptions.tokenEndpoint)
+    assert.equal(endpoints.micropub, fullOptions.micropubEndpoint)
+  })
+
+  it('Get endpoints from url headers', async () => {
+    mock.method(global, 'fetch', () => {
+      return {
+        status: 200,
+        text: () => '',
+        headers: new Headers({ Link: `<${fullOptions.authEndpoint}>; rel="authorization_endpoint", <${fullOptions.tokenEndpoint}>; rel="token_endpoint", <${fullOptions.micropubEndpoint}>; rel="micropub"` })
+      }
+    })
+
     const micropub = new Micropub(baseOptions)
     const endpoints = await micropub.getEndpointsFromUrl(baseOptions.me)
     assert.equal(endpoints.auth, fullOptions.authEndpoint)
@@ -84,13 +98,31 @@ describe('Micropub', () => {
   })
 
   // TODO: Test returning non json and test returning invalid response.
-  it('Get token', async t => {
+  it('Get token', async () => {
+    mock.method(global, 'fetch', () => {
+      return {
+        status: 200,
+        json: () => ({
+          access_token: serverData.token,
+          me: baseOptions.me,
+          scope: 'create delete update'
+        })
+      }
+    })
+
     const micropub = new Micropub(fullOptions)
     const token = await micropub.getToken('code')
     assert.equal(token, serverData.token)
   })
 
-  it('Get auth endpoint', async t => {
+  it('Get auth endpoint', async () => {
+    mock.method(global, 'fetch', () => {
+      return {
+        status: 200,
+        text: () => serverData.pageHtml,
+        headers: new Headers({ 'Content-Type': 'text/html' })
+      }
+    })
     const micropub = new Micropub(baseOptions)
     const authUrlRes = await micropub.getAuthUrl()
     const parsedUrl = new URL(authUrlRes)
@@ -105,27 +137,76 @@ describe('Micropub', () => {
     assert.equal(parsedUrl.searchParams.get('scope'), 'create delete update')
   })
 
-  it('Verify token', async t => {
+  it('Verify token', async () => {
+    mock.method(global, 'fetch', () => ({
+      status: 200,
+      headers: new Headers({}),
+      text: () => '',
+      ok: true
+    }))
     const micropub = new Micropub(fullOptions)
     const valid = await micropub.verifyToken()
     assert.ok(valid)
+    mock.reset()
+
+    mock.method(global, 'fetch', () => ({
+      status: 401,
+      headers: new Headers({}),
+      text: () => '',
+      ok: false
+    }))
     micropub.setOptions({ token: 'invalid' })
     try {
       await micropub.verifyToken()
       throw new Error('Test failed, did not throw expected error')
     } catch (err: MicropubError | any) {
-      assert.equal(err.message, 'Error verifying token')
+      assert.equal(err.message, 'Token verification failed')
       assert.equal(err.status, 401)
     }
   })
 
-  it('Create note json encoded', async t => {
+  it('Create note json encoded', async () => {
+    const fetchMock = mock.method(global, 'fetch', () => ({
+      status: 200,
+      headers: new Headers({
+        Location: serverData.mf2.note.properties.url[0]
+      }),
+      text: () => '',
+      json: () => serverData.mf2.note,
+      ok: true
+    }))
+
     const micropub = new Micropub(fullOptions)
     const noteUrl = await micropub.create(serverData.mf2.note)
     assert.equal(noteUrl, serverData.mf2.note.properties.url[0])
+
+    const fetchArgs = fetchMock.mock.calls[0].arguments
+    if (fetchArgs[1] === undefined) {
+      throw new Error('Fetch args not set')
+    }
+    assert.equal(fetchArgs[0], fullOptions.micropubEndpoint)
+    assert.equal(fetchArgs.length, 2)
+    assert.equal(fetchArgs[1].method, 'POST')
+    const fetchHeaders = fetchArgs[1].headers as Headers
+    if (fetchArgs[1].headers === undefined) {
+      throw new Error('Headers not set')
+    }
+    assert.equal(fetchHeaders.get('content-type'), 'application/json')
+    assert.equal(fetchHeaders.get('authorization'), `Bearer ${fullOptions.token}`)
+    assert.equal(fetchArgs[1].body, JSON.stringify(serverData.mf2.note))
   })
 
-  it('Create note form encoded', async t => {
+  it('Create note form encoded', async () => {
+    const fetchMock = mock.method(global, 'fetch', () => ({
+      status: 200,
+      headers: new Headers({
+        Location: serverData.mf2.note.properties.url[0]
+      }),
+      text: () => '',
+      json: () => serverData.mf2.note,
+      ok: true
+    }))
+
     const micropub = new Micropub(fullOptions)
     const noteUrl = await micropub.create(
       {
@@ -135,107 +216,455 @@ describe('Micropub', () => {
       'form'
     )
     assert.equal(noteUrl, serverData.mf2.note.properties.url[0])
+
+    const fetchArgs = fetchMock.mock.calls[0].arguments
+    if (fetchArgs[1] === undefined) {
+      throw new Error('Fetch args not set')
+    }
+    assert.equal(fetchArgs[0], fullOptions.micropubEndpoint)
+    assert.equal(fetchArgs.length, 2)
+    assert.equal(fetchArgs[1].method, 'POST')
+    const fetchHeaders = fetchArgs[1].headers as Headers
+    if (fetchArgs[1].headers === undefined) {
+      throw new Error('Headers not set')
+    }
+    assert.equal(fetchHeaders.get('content-type'), 'application/x-www-form-urlencoded;charset=UTF-8')
+    assert.equal(fetchHeaders.get('authorization'), `Bearer ${fullOptions.token}`)
+    assert.equal(fetchArgs[1].body, `h=entry&content=${encodeURIComponent(serverData.mf2.note.properties.content[0])}`)
   })
 
-  it('Update note', async t => {
+  it('Update note', async () => {
+    const fetchMock = mock.method(global, 'fetch', () => ({
+      status: 200,
+      headers: new Headers({
+        Location: serverData.mf2.note.properties.url[0]
+      }),
+      text: () => '',
+      json: () => serverData.mf2.note,
+      ok: true
+    }))
     const micropub = new Micropub(fullOptions)
     const res = await micropub.update(serverData.mf2.note.properties.url[0], {
       replace: { content: ['Replaced content'] }
     })
     assert.ok(res)
     assert.equal(res, serverData.mf2.note.properties.url[0])
+
+    const fetchArgs = fetchMock.mock.calls[0].arguments
+    if (fetchArgs[1] === undefined) {
+      throw new Error('Fetch args not set')
+    }
+    assert.equal(fetchArgs[0], fullOptions.micropubEndpoint)
+    assert.equal(fetchArgs.length, 2)
+    assert.equal(fetchArgs[1].method, 'POST')
+    const fetchHeaders = fetchArgs[1].headers as Headers
+    if (fetchArgs[1].headers === undefined) {
+      throw new Error('Headers not set')
+    }
+    assert.equal(fetchHeaders.get('content-type'), 'application/json')
+    assert.equal(fetchHeaders.get('authorization'), `Bearer ${fullOptions.token}`)
+    assert.deepStrictEqual(JSON.parse(fetchArgs[1].body as string), {
+      replace: { content: ['Replaced content'] },
+      action: 'update',
+      url: serverData.mf2.note.properties.url[0]
+    })
   })
 
-  it('Delete note', async t => {
+  it('Delete note', async () => {
+    const fetchMock = mock.method(global, 'fetch', () => ({
+      status: 200,
+      headers: new Headers({
+        Location: serverData.mf2.note.properties.url[0]
+      }),
+      text: () => '',
+      json: () => serverData.mf2.note,
+      ok: true
+    }))
     const micropub = new Micropub(fullOptions)
     const res = await micropub.delete(serverData.mf2.note.properties.url[0])
     assert.ok(res)
+
+    const fetchArgs = fetchMock.mock.calls[0].arguments
+    if (fetchArgs[1] === undefined) {
+      throw new Error('Fetch args not set')
+    }
+    assert.equal(fetchArgs[0], fullOptions.micropubEndpoint)
+    assert.equal(fetchArgs.length, 2)
+    assert.equal(fetchArgs[1].method, 'POST')
+    const fetchHeaders = fetchArgs[1].headers as Headers
+    if (fetchArgs[1].headers === undefined) {
+      throw new Error('Headers not set')
+    }
+    assert.equal(fetchHeaders.get('content-type'), 'application/json')
+    assert.equal(fetchHeaders.get('authorization'), `Bearer ${fullOptions.token}`)
+    assert.deepStrictEqual(JSON.parse(fetchArgs[1].body as string), {
+      action: 'delete',
+      url: serverData.mf2.note.properties.url[0]
+    })
   })
 
-  it('Undelete note', async t => {
+  it('Undelete note', async () => {
+    const fetchMock = mock.method(global, 'fetch', () => ({
+      status: 201,
+      headers: new Headers({
+        Location: serverData.mf2.note.properties.url[0]
+      }),
+      text: () => '',
+      json: () => serverData.mf2.note,
+      ok: true
+    }))
+
     const micropub = new Micropub(fullOptions)
     const noteUrl = serverData.mf2.note.properties.url[0]
     const undeleteUrl = await micropub.undelete(noteUrl)
     assert.equal(undeleteUrl, noteUrl)
+
+    const fetchArgs = fetchMock.mock.calls[0].arguments
+    if (fetchArgs[1] === undefined) {
+      throw new Error('Fetch args not set')
+    }
+    assert.equal(fetchArgs[0], fullOptions.micropubEndpoint)
+    assert.equal(fetchArgs.length, 2)
+    assert.equal(fetchArgs[1].method, 'POST')
+    const fetchHeaders = fetchArgs[1].headers as Headers
+    if (fetchArgs[1].headers === undefined) {
+      throw new Error('Headers not set')
+    }
+    assert.equal(fetchHeaders.get('content-type'), 'application/json')
+    assert.equal(fetchHeaders.get('authorization'), `Bearer ${fullOptions.token}`)
+    assert.deepStrictEqual(JSON.parse(fetchArgs[1].body as string), {
+      action: 'undelete',
+      url: serverData.mf2.note.properties.url[0]
+    })
   })
 
-  it('Post media', async t => {
+  it('Post media', async () => {
+    const fetchMock = mock.method(global, 'fetch', () => ({
+      status: 201,
+      headers: new Headers({
+        Location: serverData.fileUrl
+      }),
+      text: () => '',
+      json: () => '',
+      ok: true
+    }))
+
     const micropub = new Micropub(fullOptions)
     const filePath = __dirname + '/../image.png'
     const buffer = readFileSync(filePath)
     const url = await micropub.postMedia(new Blob([buffer]))
     assert.equal(url, serverData.fileUrl)
+
+    const fetchArgs = fetchMock.mock.calls[0].arguments
+    if (fetchArgs[1] === undefined) {
+      throw new Error('Fetch args not set')
+    }
+    assert.equal(fetchArgs[0], fullOptions.mediaEndpoint)
+    assert.equal(fetchArgs.length, 2)
+    assert.equal(fetchArgs[1].method, 'POST')
+    const fetchHeaders = fetchArgs[1].headers as Headers
+    if (fetchArgs[1].headers === undefined) {
+      throw new Error('Headers not set')
+    }
+    assert.equal(fetchHeaders.get('authorization'), `Bearer ${fullOptions.token}`)
+    // Make sure body is FormData and content-type header not set
+    assert.ok(fetchArgs[1].body instanceof FormData)
+    assert.equal(fetchHeaders.get('content-type'), null)
   })
 
-  it('Query config', async t => {
+  it('Query config', async () => {
+    const fetchMock = mock.method(global, 'fetch', () => ({
+      status: 200,
+      headers: new Headers({
+        'content-type': 'application/json'
+      }),
+      text: () => '',
+      json: () => serverData.micropubConfig,
+      ok: true
+    }))
+
     const micropub = new Micropub(fullOptions)
     const config = await micropub.query('config')
     assert.deepEqual(config, serverData.micropubConfig)
+
+    const fetchArgs = fetchMock.mock.calls[0].arguments
+    if (fetchArgs[1] === undefined) {
+      throw new Error('Fetch args not set')
+    }
+    assert.equal(fetchArgs[0], `${fullOptions.micropubEndpoint}?q=config`)
+    assert.equal(fetchArgs.length, 2)
+    assert.equal(fetchArgs[1].method, 'GET')
+    const fetchHeaders = fetchArgs[1].headers as Headers
+    if (fetchArgs[1].headers === undefined) {
+      throw new Error('Headers not set')
+    }
+    assert.equal(fetchHeaders.get('accept'), 'application/json')
+    assert.equal(fetchHeaders.get('authorization'), `Bearer ${fullOptions.token}`)
   })
 
-  it('Query syndication targets', async t => {
+  it('Query syndication targets', async () => {
+    const syndicateTo = { 'syndicate-to': serverData.micropubConfig['syndicate-to'] }
+    const fetchMock = mock.method(global, 'fetch', () => ({
+      status: 200,
+      headers: new Headers({
+        'content-type': 'application/json'
+      }),
+      text: () => '',
+      json: () => syndicateTo,
+      ok: true
+    }))
+
     const micropub = new Micropub(fullOptions)
-    const targets = await micropub.query('syndicate-to')
-    assert.deepEqual(targets, serverData.micropubConfig['syndicate-to'])
+    const result = await micropub.query('syndicate-to')
+    assert.deepEqual(result, syndicateTo)
+
+    const fetchArgs = fetchMock.mock.calls[0].arguments
+    if (fetchArgs[1] === undefined) {
+      throw new Error('Fetch args not set')
+    }
+    assert.equal(fetchArgs[0], `${fullOptions.micropubEndpoint}?q=syndicate-to`)
+    assert.equal(fetchArgs.length, 2)
+    assert.equal(fetchArgs[1].method, 'GET')
+    const fetchHeaders = fetchArgs[1].headers as Headers
+    if (fetchArgs[1].headers === undefined) {
+      throw new Error('Headers not set')
+    }
+    assert.equal(fetchHeaders.get('accept'), 'application/json')
+    assert.equal(fetchHeaders.get('authorization'), `Bearer ${fullOptions.token}`)
   })
 
-  it('Query handles error', async t => {
+  it('Query handles error', async () => {
+    const fetchMock = mock.method(global, 'fetch', () => ({
+      status: 400,
+      headers: new Headers({
+        'content-type': 'application/json'
+      }),
+      text: () => '',
+      json: () => ({
+        error: 'invalid_request',
+        error_description: 'Unsupported query'
+      }),
+      ok: false
+    }))
+
     const micropub = new Micropub(fullOptions)
     try {
       await micropub.query('throw-error')
       throw new Error('Test failed, did not throw expected error')
     } catch (err: MicropubError | any) {
       assert.equal(err.message, 'Error getting throw-error')
-      assert.ok(err.status > 399)
+      assert.equal(err.status, 400)
     }
+
+    const fetchArgs = fetchMock.mock.calls[0].arguments
+    if (fetchArgs[1] === undefined) {
+      throw new Error('Fetch args not set')
+    }
+    assert.equal(fetchArgs[0], `${fullOptions.micropubEndpoint}?q=throw-error`)
+    assert.equal(fetchArgs.length, 2)
+    assert.equal(fetchArgs[1].method, 'GET')
+    const fetchHeaders = fetchArgs[1].headers as Headers
+    if (fetchArgs[1].headers === undefined) {
+      throw new Error('Headers not set')
+    }
+    assert.equal(fetchHeaders.get('accept'), 'application/json')
+    assert.equal(fetchHeaders.get('authorization'), `Bearer ${fullOptions.token}`)
   })
 
-  it('Query source', async t => {
+  it('Query category list', async () => {
+    const categories = { categories: serverData.micropubConfig.categories }
+    const fetchMock = mock.method(global, 'fetch', () => ({
+      status: 200,
+      headers: new Headers({
+        'content-type': 'application/json'
+      }),
+      text: () => '',
+      json: () => categories,
+      ok: true
+    }))
+
+    const micropub = new Micropub(fullOptions)
+    const targets = await micropub.query('category')
+    assert.deepEqual(targets, categories)
+
+    const fetchArgs = fetchMock.mock.calls[0].arguments
+    if (fetchArgs[1] === undefined) {
+      throw new Error('Fetch args not set')
+    }
+    assert.equal(fetchArgs[0], `${fullOptions.micropubEndpoint}?q=category`)
+    assert.equal(fetchArgs.length, 2)
+    assert.equal(fetchArgs[1].method, 'GET')
+    const fetchHeaders = fetchArgs[1].headers as Headers
+    if (fetchArgs[1].headers === undefined) {
+      throw new Error('Headers not set')
+    }
+    assert.equal(fetchHeaders.get('accept'), 'application/json')
+    assert.equal(fetchHeaders.get('authorization'), `Bearer ${fullOptions.token}`)
+  })
+
+  it('Query source', async () => {
+    const fetchMock = mock.method(global, 'fetch', () => ({
+      status: 200,
+      headers: new Headers({
+        'content-type': 'application/json'
+      }),
+      text: () => '',
+      json: () => serverData.mf2.note,
+      ok: true
+    }))
+
     const micropub = new Micropub(fullOptions)
     const post = await micropub.querySource(serverData.mf2.note.properties.url[0])
     assert.deepEqual(post, serverData.mf2.note)
+
+    const fetchArgs = fetchMock.mock.calls[0].arguments
+    if (fetchArgs[1] === undefined) {
+      throw new Error('Fetch args not set')
+    }
+    assert.equal(fetchArgs[0], `${fullOptions.micropubEndpoint}?q=source&url=${encodeURIComponent(serverData.mf2.note.properties.url[0])}`)
+    assert.equal(fetchArgs.length, 2)
+    assert.equal(fetchArgs[1].method, 'GET')
+    const fetchHeaders = fetchArgs[1].headers as Headers
+    if (fetchArgs[1].headers === undefined) {
+      throw new Error('Headers not set')
+    }
+    assert.equal(fetchHeaders.get('accept'), 'application/json')
+    assert.equal(fetchHeaders.get('authorization'), `Bearer ${fullOptions.token}`)
   })
 
-  it('Query source content property', async t => {
+  it('Query source content property', async () => {
+    const contentResponse = {
+      properties: {
+        content: serverData.mf2.note.properties.content
+      }
+    }
+    const fetchMock = mock.method(global, 'fetch', () => ({
+      status: 200,
+      headers: new Headers({
+        'content-type': 'application/json'
+      }),
+      text: () => '',
+      json: () => contentResponse,
+      ok: true
+    }))
+
     const micropub = new Micropub(fullOptions)
-    const { content } = await micropub.querySource(
+    const res = await micropub.querySource(
       serverData.mf2.note.properties.url[0],
       ['content']
     )
-    assert.deepEqual(content, serverData.mf2.note.properties.content)
+    assert.deepEqual(res, contentResponse)
+
+    const fetchArgs = fetchMock.mock.calls[0].arguments
+    if (fetchArgs[1] === undefined) {
+      throw new Error('Fetch args not set')
+    }
+    assert.equal(fetchArgs[0], `${fullOptions.micropubEndpoint}?q=source&url=${encodeURIComponent(serverData.mf2.note.properties.url[0])}&properties[]=content`)
+    assert.equal(fetchArgs.length, 2)
+    assert.equal(fetchArgs[1].method, 'GET')
+    const fetchHeaders = fetchArgs[1].headers as Headers
+    if (fetchArgs[1].headers === undefined) {
+      throw new Error('Headers not set')
+    }
+    assert.equal(fetchHeaders.get('accept'), 'application/json')
+    assert.equal(fetchHeaders.get('authorization'), `Bearer ${fullOptions.token}`)
   })
 
-  it('Query source list', async t => {
+  it('Query source list', async () => {
+    const fetchMock = mock.method(global, 'fetch', () => ({
+      status: 200,
+      headers: new Headers({
+        'content-type': 'application/json'
+      }),
+      text: () => '',
+      json: () => ({ items: serverData.mf2.list }),
+      ok: true
+    }))
+
     const micropub = new Micropub(fullOptions)
     const { items } = await micropub.querySource()
     assert.deepEqual(items, serverData.mf2.list)
+
+    const fetchArgs = fetchMock.mock.calls[0].arguments
+    if (fetchArgs[1] === undefined) {
+      throw new Error('Fetch args not set')
+    }
+    assert.equal(fetchArgs[0], `${fullOptions.micropubEndpoint}?q=source`)
+    assert.equal(fetchArgs.length, 2)
+    assert.equal(fetchArgs[1].method, 'GET')
+    const fetchHeaders = fetchArgs[1].headers as Headers
+    if (fetchArgs[1].headers === undefined) {
+      throw new Error('Headers not set')
+    }
+    assert.equal(fetchHeaders.get('accept'), 'application/json')
+    assert.equal(fetchHeaders.get('authorization'), `Bearer ${fullOptions.token}`)
   })
 
-  it('Custom query source', async t => {
+  it('Custom query source', async () => {
+    const fetchMock = mock.method(global, 'fetch', () => ({
+      status: 200,
+      headers: new Headers({
+        'content-type': 'application/json'
+      }),
+      text: () => '',
+      json: () => ({ items: [serverData.mf2.note] }),
+      ok: true
+    }))
+
     const micropub = new Micropub(fullOptions)
     const { items } = await micropub.querySource({ 'post-type': 'note' })
     assert.deepEqual(items, [serverData.mf2.note])
-  })
 
-  it('Malformed query source', async t => {
-    const micropub = new Micropub(fullOptions)
-    try {
-      await micropub.querySource('1')
-      throw new Error('Test failed, did not throw expected error')
-    } catch (err: MicropubError | any) {
-      assert.equal(err.message, 'Error getting source')
-      assert.equal(err.status, 404)
+    const fetchArgs = fetchMock.mock.calls[0].arguments
+    if (fetchArgs[1] === undefined) {
+      throw new Error('Fetch args not set')
     }
+    assert.equal(fetchArgs[0], `${fullOptions.micropubEndpoint}?q=source&post-type=note`)
+    assert.equal(fetchArgs.length, 2)
+    assert.equal(fetchArgs[1].method, 'GET')
+    const fetchHeaders = fetchArgs[1].headers as Headers
+    if (fetchArgs[1].headers === undefined) {
+      throw new Error('Headers not set')
+    }
+    assert.equal(fetchHeaders.get('accept'), 'application/json')
+    assert.equal(fetchHeaders.get('authorization'), `Bearer ${fullOptions.token}`)
   })
 
-  it('Query source returns error', async t => {
+  it('Query source returns error', async () => {
+    const fetchMock = mock.method(global, 'fetch', () => ({
+      status: 400,
+      headers: new Headers({
+        'content-type': 'application/json'
+      }),
+      text: () => '',
+      json: () => ({
+        error: 'invalid_request',
+        error_description: 'The post with the requested URL was not found'
+      }),
+      ok: false
+    }))
+
     const micropub = new Micropub(fullOptions)
     try {
       await micropub.querySource('doesnt-exist')
       throw new Error('Test failed, did not throw expected error')
     } catch (err: MicropubError | any) {
       assert.equal(err.message, 'Error getting source')
-      assert.equal(err.status, 404)
+      assert.equal(err.status, 400)
     }
+
+    const fetchArgs = fetchMock.mock.calls[0].arguments
+    if (fetchArgs[1] === undefined) {
+      throw new Error('Fetch args not set')
+    }
+    assert.equal(fetchArgs[0], `${fullOptions.micropubEndpoint}?q=source&url=doesnt-exist`)
+    assert.equal(fetchArgs.length, 2)
+    assert.equal(fetchArgs[1].method, 'GET')
+    const fetchHeaders = fetchArgs[1].headers as Headers
+    if (fetchArgs[1].headers === undefined) {
+      throw new Error('Headers not set')
+    }
+    assert.equal(fetchHeaders.get('accept'), 'application/json')
+    assert.equal(fetchHeaders.get('authorization'), `Bearer ${fullOptions.token}`)
   })
 })

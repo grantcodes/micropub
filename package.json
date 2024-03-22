@@ -43,7 +43,7 @@
     "test": "run-s test:lint test:build test:unit",
     "test:build": "tsup --env.TEST=yes",
     "test:lint": "ts-standard src",
-    "test:unit": "node --test ./tmp/tests/**/*.test.js",
+    "test:unit": "node --test",
     "test-server": "tsup --env.TEST=yes --watch --onSuccess 'node ./tmp/tests/tests/_server/run.js'"
   },
   "prettier": {
@@ -52,14 +52,8 @@
   },
   "devDependencies": {
     "@grantcodes/commit": "^1.0.7",
-    "@playwright/test": "^1.42.1",
-    "@types/express": "^4.17.21",
-    "@types/multer": "^1.4.11",
     "@types/node": "^20.11.28",
     "@types/qs": "^6.9.12",
-    "c8": "^9.1.0",
-    "express": "^4.18.3",
-    "multer": "^1.4.4",
     "npm-run-all": "^4.1.5",
     "ts-standard": "^12.0.2",
     "tsup": "^8.0.2",
