@@ -1,9 +1,10 @@
 import { it, describe, mock, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { data as serverData } from './_data/data.js'
+import testImageName from './_data/image.png'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { MicropubError } from '../lib/micropub-error.js'
 import { Micropub } from '../main.js'
@@ -350,7 +351,7 @@ describe('Micropub', () => {
     }))
 
     const micropub = new Micropub(fullOptions)
-    const filePath = __dirname + '/../image.png'
+    const filePath = join(__dirname, '..', testImageName)
     const buffer = readFileSync(filePath)
     const url = await micropub.postMedia(new Blob([buffer]))
     assert.equal(url, serverData.fileUrl)
