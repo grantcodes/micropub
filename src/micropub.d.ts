@@ -20,6 +20,7 @@ export interface MicropubSyndicationTarget {
 export interface MicropubConfigQueryResponse {
 	"media-endpoint"?: string;
 	"syndicate-to"?: MicropubSyndicationTarget[];
+	// biome-ignore lint/suspicious/noExplicitAny: Could be anything returned from the config query
 	[key: string]: any;
 }
 
@@ -43,8 +44,11 @@ export interface MicropubUndeleteActionRequest extends MicropubActionRequest {
 
 export interface MicropubUpdateActionRequest extends MicropubActionRequest {
 	action: "update";
+	// biome-ignore lint/suspicious/noExplicitAny: Could be anything inside an update request
 	replace?: Record<string, any>;
+	// biome-ignore lint/suspicious/noExplicitAny: Could be anything inside an update request
 	add?: Record<string, any>;
+	// biome-ignore lint/suspicious/noExplicitAny: Could be anything inside an update request
 	delete?: Record<string, any>;
 }
 
