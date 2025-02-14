@@ -1,6 +1,10 @@
 name: Create Prerelease
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - next
 
 jobs:
   release-please:
@@ -10,9 +14,6 @@ jobs:
         name: Create release PR
         with:
           release-type: node
-          package-name: 'micropub-helper'
-          prerelease: true
-          default-branch: next
 
       - uses: actions/checkout@v3
         name: Checkout code
@@ -32,7 +33,7 @@ jobs:
       - run: npm run build
         name: Run build
 
-      - run: npm publish --tag next
+      - run: npm publish --tag beta
         name: Publish to NPM
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
