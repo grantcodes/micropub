@@ -13,7 +13,6 @@ jobs:
         name: Create release PR
         with:
           release-type: node
-          package-name: 'micropub-helper'
 
       - uses: actions/checkout@v3
         name: Checkout code
@@ -22,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v3
         name: Setup node
         with:
-          node-version: 20
+          node-version: 22
           registry-url: 'https://registry.npmjs.org'
         if: ${{ steps.release.outputs.release_created }}
 
