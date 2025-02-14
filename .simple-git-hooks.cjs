@@ -1,1 +1,2 @@
-const defaultHooks = require('@grantcodes/commit/.simple-git-hooks.cjs'); module.exports = { ...defaultHooks };
+const defaultHooks = require("@grantcodes/commit/.simple-git-hooks.cjs");
+module.exports = { ...defaultHooks };

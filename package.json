@@ -1,69 +1,55 @@
 {
-  "name": "micropub-helper",
-  "version": "2.0.0",
-  "description": "A simple helper class for creating micropub clients",
-  "keywords": [
-    "micropub",
-    "indieweb"
-  ],
-  "type": "module",
-  "main": "./dist/main.cjs",
-  "module": "./dist/main.js",
-  "types": "./dist/main.d.ts",
-  "exports": {
-    ".": {
-      "require": "./dist/main.cjs",
-      "import": "./dist/main.js",
-      "types": "./dist/main.d.ts"
-    }
-  },
-  "homepage": "https://github.com/grantcodes/micropub",
-  "bugs": "https://github.com/grantcodes/micropub/issues",
-  "browserslist": "> 1%, not dead",
-  "browser": {
-    "jsdom/lib/jsdom/living": false,
-    "formdata-polyfill/esm.min.js": false,
-    "url": false
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "author": "Grant Richmond <mail@grant.codes> (https://grant.codes)",
-  "license": "MIT",
-  "dependencies": {
-    "formdata-polyfill": "^4.0.10",
-    "qs": "^6.12.0",
-    "rel-parser": "^2.0.0"
-  },
-  "scripts": {
-    "build": "tsup",
-    "watch": "tsup --watch",
-    "fix": "run-s fix:lint",
-    "fix:lint": "ts-standard --fix src",
-    "test": "run-s test:lint test:build test:unit",
-    "test:build": "tsup --env.TEST=yes",
-    "test:lint": "ts-standard src",
-    "test:unit": "node --test",
-    "test-server": "tsup --env.TEST=yes --watch --onSuccess 'node ./tmp/tests/tests/_server/run.js'"
-  },
-  "prettier": {
-    "singleQuote": true,
-    "trailingComma": "all"
-  },
-  "devDependencies": {
-    "@grantcodes/commit": "^1.0.7",
-    "@types/node": "^20.11.28",
-    "@types/qs": "^6.9.12",
-    "npm-run-all": "^4.1.5",
-    "ts-standard": "^12.0.2",
-    "tsup": "^8.0.2",
-    "typescript": "^5.4.2"
-  },
-  "files": [
-    "dist/**/*",
-    "!**/*.test.*",
-    "CHANGELOG.md",
-    "LICENSE",
-    "README.md"
-  ] 
+	"name": "micropub-helper",
+	"version": "2.0.0",
+	"description": "A simple helper class for creating micropub clients",
+	"keywords": ["micropub", "indieweb"],
+	"type": "module",
+	"main": "./dist/main.cjs",
+	"module": "./dist/main.js",
+	"types": "./dist/main.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/main.d.ts",
+			"require": "./dist/main.cjs",
+			"import": "./dist/main.js"
+		}
+	},
+	"homepage": "https://github.com/grantcodes/micropub",
+	"bugs": "https://github.com/grantcodes/micropub/issues",
+	"browserslist": "> 1%, not dead",
+	"engines": {
+		"node": ">=20.0.0"
+	},
+	"author": "Grant Richmond <mail@grant.codes> (https://grant.codes)",
+	"license": "MIT",
+	"dependencies": {
+		"formdata-polyfill": "^4.0.10",
+		"qs": "^6.14.0",
+		"rel-parser": "^2.0.0"
+	},
+	"scripts": {
+		"build": "tsup",
+		"watch": "tsup --watch",
+		"fix": "run-s fix:lint",
+		"fix:lint": "npx @biomejs/biome format --write src",
+		"test": "run-s test:lint test:build test:unit",
+		"test:build": "tsup --env.TEST=yes",
+		"test:lint": "npx @biomejs/biome lint src",
+		"test:unit": "node --test",
+		"test-server": "tsup --env.TEST=yes --watch --onSuccess 'node ./tmp/tests/tests/_server/run.js'"
+	},
+	"prettier": {
+		"singleQuote": true,
+		"trailingComma": "all"
+	},
+	"devDependencies": {
+		"@grantcodes/commit": "^2.0.0",
+		"@types/node": "^22.13.2",
+		"@types/qs": "^6.9.18",
+		"npm-run-all": "^4.1.5",
+		"tsup": "^8.3.6",
+		"typescript": "^5.7.3",
+		"@biomejs/biome": "1.9.4"
+	},
+	"files": ["dist/**/*", "!**/*.test.*", "CHANGELOG.md", "LICENSE", "README.md"]
 }

@@ -1,1 +1,1 @@
-module.exports = { extends: ['@grantcodes/commit/commitlint.config.cjs'] };
+module.exports = { extends: ["@grantcodes/commit/commitlint.config.cjs"] };

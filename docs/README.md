@@ -4,10 +4,6 @@ A [micropub](https://micropub.net/) helper library for JavaScript.
 
 ## Usage
 
-### Client side useage
-
-Although this library is intended to be usable client side you will likely run into [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) issues so be careful about that.
-
 ### Installation
 
 ```bash
@@ -47,14 +43,14 @@ If you already have other information stored such as the token and micropub endp
 - `micropubEndpoint` - The micropub endpoint
 - `mediaEndpoint` - The media endpoint
 
-You can get and set the options on an instantiated class with the `setOptions` and `getOptions` methods:
+You can get and set the options on an instantiated class with the `options` getters and setters:
 
 ```js
 // Get the user domain
-const { me } = micropub.getOptions();
+const { me } = micropub.options;
 
 // Change the token
-micropub.setOptions({ token: 'newtoken' });
+micropub.options = { token: 'newtoken' };
 ```
 
 ### Getting site endpoints
@@ -79,7 +75,7 @@ The first step is likely to be getting the authorization url to direct the user 
 
 ```js
 const url = await micropub.getAuthUrl();
-const { micropubEndpoint } = micropub.getOptions();
+const { micropubEndpoint } = micropub.options;
 // You should probably store micropubEndpoint here
 // and then handle directing user to this url to authenticate
 ```
@@ -208,7 +204,7 @@ The file should either be passed as a `File` object using frontend JavaScript or
 ```js
 const { mediaEndpoint: 'media-endpoint' } = await micropub.query('config')
 if (mediaEndpoint) {
-  micropub.setOptions({ mediaEndpoint });
+  micropub.options = { mediaEndpoint };
   const fileUrl = await micropub.postMedia(file)
 }
 ```
@@ -228,6 +224,40 @@ If there are any errors then the methods will reject with a `MicropubError` clas
 Generally if there is a `status` code that means the micropub endpoint returned an http error.
 And if there is `error` then there was an error sending the request at your end.
 This might not be 100% accurate as there are a lot of potential errors.
+
+### Client side useage
+
+Although this library is intended to be usable client side you will likely run into [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) issues so be careful about that.
+
+If you really need to use micropub client side you have a couple of options:
+1. If it's just for your own website, then setup all your services to allow cross-origin requests
+2. If you expect others to use your micropub client you can setup a CORs proxy and extend the `Micropub` class to use the proxy:
+    ```js
+    class MicropubWithCorsProxy extends Micropub {
+      constructor(options) {
+        super(options)
+      }
+
+      getFetchUrl(url) {
+        url = super.getFetchUrl(url)
+        return `https://mycorsproxy.com/?${encodeURIComponent(url)}`
+      }
+    }
+    ```
+
+## Breaking Changes
+
+### v2
+
+The v2 version is a complete rewrite using typescript and native JavaScript fetch (instead of the axios library).
+
+Usage of the library is very similar to the previous version with a couple of breaking changes:
+
+- **Setting options**: In v2 there is an options setter, so instead of manually setting each property `micropub.options.token="token"` you must set it as an object eg. `micropub.options = { token: "token" }`. This is additive, it will not unset other options.
+- **Return types**: In v2 the `create` method would return `true` if it was successful, but could not retrieve a url, now it will return an empty string.
+- **Error class**: Instead of a error object, thrown errors are now a simple `MicropubError` objects which extend the default `Error`.
+- **Media handling**: Media uploads are slightly changed to accept native `File` or `Buffer` objects (`File` is reccomended if possible.
+- **Node.js version**: Version 20+ is required now.
 
 ## Thanks
 

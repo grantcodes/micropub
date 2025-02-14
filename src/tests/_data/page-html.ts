@@ -15,6 +15,6 @@ const pageHtml = `
       <h1>Test Micropub Site</h1>
     </body> 
   </html>
-`
+`;
 
-export { pageHtml }
+export { pageHtml };
