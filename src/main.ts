@@ -171,7 +171,7 @@ class Micropub {
 	 * @param  {string} url The url to scrape
 	 * @throws {MicropubError} If the endpoints are not found
 	 * @return {Promise<MicropubEndpointsReponse>}    Passes an object of endpoints on success: auth, token and micropub
-	*/
+	 */
 	// @ts-expect-error - Error handling in a separate function
 	async getEndpointsFromUrl(url: string): Promise<MicropubEndpointsReponse> {
 		try {
@@ -512,7 +512,7 @@ class Micropub {
 
 			if (!res.ok) {
 				throw new MicropubError(
-					"Query did not return successfully",
+					`${queryType} query did not return successfully`,
 					res.status,
 					await res.text(),
 				);
