@@ -1,6 +1,6 @@
 {
 	"name": "micropub-helper",
-	"version": "2.0.0",
+	"version": "2.0.0-beta.0",
 	"description": "A simple helper class for creating micropub clients",
 	"keywords": ["micropub", "indieweb"],
 	"type": "module",
