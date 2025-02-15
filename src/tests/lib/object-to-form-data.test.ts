@@ -1,6 +1,5 @@
 import { it, describe } from "node:test";
 import assert from "node:assert/strict";
-import { FormData } from "formdata-polyfill/esm.min.js";
 import { objectToFormData } from "../../lib/object-to-form-data.js";
 
 /* eslint-disable @typescript-eslint/no-floating-promises */
