@@ -6,6 +6,10 @@ on:
     branches:
       - next
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
