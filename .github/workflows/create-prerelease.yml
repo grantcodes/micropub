@@ -1,10 +1,10 @@
-name: Create Prerelease
+name: Create Beta Prerelease
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - next
+      - beta
 
 permissions:
   contents: write
@@ -27,7 +27,7 @@ jobs:
         name: Setup node
         with:
           node-version: 22
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       - run: npm ci
         name: Install dependencies

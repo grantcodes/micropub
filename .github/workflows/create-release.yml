@@ -3,7 +3,7 @@ name: Create Release
 on:
   push:
     branches:
-      - main
+      - master
 
 permissions:
   contents: write
@@ -26,7 +26,7 @@ jobs:
         name: Setup node
         with:
           node-version: 22
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
         if: ${{ steps.release.outputs.release_created }}
 
       - run: npm ci
