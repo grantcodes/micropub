@@ -1,0 +1,44 @@
+name: Create Prerelease
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - next
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        name: Create release PR
+        with:
+          config-file: prerelease-please-config.json
+          target-branch: ${{ github.ref_name }}
+
+      - uses: actions/checkout@v3
+        name: Checkout code
+
+      - uses: actions/setup-node@v3
+        name: Setup node
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+        name: Install dependencies
+
+      - run: npm test
+        name: Run tests
+
+      - run: npm run build
+        name: Run build
+
+      - run: npm publish --tag beta
+        name: Publish to NPM
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

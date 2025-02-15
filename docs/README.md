@@ -4,10 +4,6 @@ A [micropub](https://micropub.net/) helper library for JavaScript.
 
 ## Usage
 
-### Client side useage
-
-Although this library is intended to be usable client side you will likely run into [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) issues so be careful about that.
-
 ### Installation
 
 ```bash
@@ -47,14 +43,14 @@ If you already have other information stored such as the token and micropub endp
 - `micropubEndpoint` - The micropub endpoint
 - `mediaEndpoint` - The media endpoint
 
-You can directly retrieve and modify the options on an instantiated class with the `options` property:
+You can get and set the options on an instantiated class with the `options` getters and setters:
 
 ```js
 // Get the user domain
-const me = micropub.options.me;
+const { me } = micropub.options;
 
 // Change the token
-micropub.options.token = 'newtoken';
+micropub.options = { token: 'newtoken' };
 ```
 
 ### Getting site endpoints
@@ -66,12 +62,9 @@ It returns an object with `auth`, `token`, and `micropub` properties with the ur
 This method will also automatically set the endpoint options in the current instance so you can read `micropub.options.micropubEndpoint` etc.
 
 ```js
-micropub
-  .getEndpointsFromUrl('http://example.com')
-  .then(endpoints => {
-    const { auth, token, micropub } = endpoints;
-  })
-  .catch(err => console.log(err));
+const { auth, token, micropub } = await micropub.getEndpointsFromUrl(
+  'http://example.com',
+);
 ```
 
 Note: This is also run by the `getAuthUrl` method so chances are you will not need to use this method.
@@ -81,13 +74,10 @@ Note: This is also run by the `getAuthUrl` method so chances are you will not ne
 The first step is likely to be getting the authorization url to direct the user to.
 
 ```js
-micropub
-  .getAuthUrl()
-  .then(url => {
-    // You should probably store micropub.options.micropubEndpoint here
-    // and then handle directing user to this url to authenticate
-  })
-  .catch(err => console.log(err));
+const url = await micropub.getAuthUrl();
+const { micropubEndpoint } = micropub.options;
+// You should probably store micropubEndpoint here
+// and then handle directing user to this url to authenticate
 ```
 
 Because this method also calls the `getEndpointsFromUrl` method the instance will also hold the found endpoints. You will probably want to store at least the micropub endpoint somehow.
@@ -97,12 +87,8 @@ Because this method also calls the `getEndpointsFromUrl` method the instance wil
 The next step would be to exchange your code for an access token. You first need to initialize the library with the details you used to get the auth code and then pass the code to the auth token method:
 
 ```js
-micropub
-  .getToken('auth_code')
-  .then(token => {
-    // Here you will probably want to save the token for future use
-  })
-  .catch(err => console.log(err));
+const token = await micropub.getToken('auth_code');
+// Here you will probably want to save the token for future use
 ```
 
 ### Querying the micropub endpoint
@@ -110,12 +96,8 @@ micropub
 Once you have your token, you can send queries to the micropub endpoint. The most likely queries are the `config` and `syndicate-to` query. The result is retrieved as an object.
 
 ```js
-micropub
-  .query('config')
-  .then(res => {
-    // Handle the result of the query
-  })
-  .catch(err => console.log(err));
+const res = await micropub.query('config');
+// Handle the result of the query
 ```
 
 #### Syndication targets
@@ -123,12 +105,7 @@ micropub
 To receive the syndication targets for a site you can run:
 
 ```js
-micropub
-  .query('syndicate-to')
-  .then(res => {
-    const targets = res['syndicate-to'];
-  })
-  .catch(err => console.log(err));
+const { targets: 'syndicate-to' } = await micropub.query('syndicate-to')
 ```
 
 #### The `source` query
@@ -138,34 +115,19 @@ If the micropub endpoint supports it you can query individual posts. Since it is
 You can query all data on a post:
 
 ```js
-micropub
-  .querySource('post_url')
-  .then(res => {
-    // Handle the result
-  })
-  .catch(err => console.log(err));
+const res = await micropub.querySource('post_url');
 ```
 
 Or you can specify certain properties you wish to query:
 
 ```js
-micropub
-  .querySource('post_url', ['content', 'category'])
-  .then(res => {
-    // Handle the result
-  })
-  .catch(err => console.log(err));
+const res = await micropub.querySource('post_url', ['content', 'category']);
 ```
 
 You can also query for lists of posts if your server supports it by passing an object to the `querySource` method:
 
 ```js
-micropub
-  .querySource({ 'post-type': 'note' })
-  .then(res => {
-    // Handle the result
-  })
-  .catch(err => console.log(err));
+const res = await micropub.querySource({ 'post-type': 'note' });
 ```
 
 ### Creating posts
@@ -173,17 +135,12 @@ micropub
 You can run a create request with the microformats object for a post.
 
 ```js
-micropub
-  .create({
-    type: ['h-entry'],
-    properties: {
-      content: ['This is a post'],
-    },
-  })
-  .then(url => {
-    // Returns the url of the created post on success
-  })
-  .catch(err => console.log(err));
+const url = await micropub.create({
+  type: ['h-entry'],
+  properties: {
+    content: ['This is a post'],
+  },
+});
 ```
 
 You can also create posts using form or multipart encoding instead of the default json
@@ -191,35 +148,25 @@ You can also create posts using form or multipart encoding instead of the defaul
 #### Form encoded
 
 ```js
-micropub
-  .create(
-    {
-      h: 'entry',
-      content: 'This is a post',
-    },
-    'form',
-  )
-  .then(url => {
-    // Returns the url of the created post on success
-  })
-  .catch(err => console.log(err));
+const url = await micropub.create(
+  {
+    h: 'entry',
+    content: 'This is a post',
+  },
+  'form',
+);
 ```
 
 #### Multipart encoded
 
 ```js
-micropub
-  .create(
-    {
-      h: 'entry',
-      content: 'This is a post',
-    },
-    'multipart',
-  )
-  .then(url => {
-    // Returns the url of the created post on success
-  })
-  .catch(err => console.log(err));
+const url = await micropub.create(
+  {
+    h: 'entry',
+    content: 'This is a post',
+  },
+  'multipart',
+);
 ```
 
 Multipart encoding also has the benefit of being able to upload media files. On the frontend you can pass a `File` object to the appropriate property (e.g. `photo`). With node you can pass a readable stream, using `fs.createReadStream` for example.
@@ -229,19 +176,9 @@ Multipart encoding also has the benefit of being able to upload media files. On 
 To send a request to delete or undelete a post just send run the appropriate method with the post url:
 
 ```js
-micropub
-  .delete('post_url')
-  .then(res => {
-    // Handle the result
-  })
-  .catch(err => console.log(err));
+const deleteRes = await micropub.delete('post_url');
 
-micropub
-  .undelete('post_url')
-  .then(res => {
-    // Handle the result
-  })
-  .catch(err => console.log(err));
+const undeleteRes = await micropub.undelete('post_url');
 ```
 
 ### Updating posts
@@ -249,16 +186,11 @@ micropub
 Update requests require the url of the post and the update data:
 
 ```js
-micropub
-  .update('post_url', {
-    replace: {
-      content: ['replaced content'],
-    },
-  })
-  .then(res => {
-    // Handle the result
-  })
-  .catch(err => console.log(err));
+const res = await micropub.update('post_url', {
+  replace: {
+    content: ['replaced content'],
+  },
+});
 ```
 
 See [https://www.w3.org/TR/micropub/#update](https://www.w3.org/TR/micropub/#update) for more details of the different types of update requests you can make.
@@ -267,30 +199,19 @@ See [https://www.w3.org/TR/micropub/#update](https://www.w3.org/TR/micropub/#upd
 
 In order to post to the media endpoint you must first discover it by querying the micropub endpoint. Then you can set the `mediaEndpoint` option and use the `postMedia` method to send a media file.
 
-The file should either be passed as a `File` object using frontend JavaScript or a readable stream using node.
+The file should either be passed as a `File` or `Blob` object.
 
 ```js
-micropub
-  .query('config')
-  .then(res => {
-    if (res && res['media-endpoint']) {
-      micropub.options.mediaEndpoint = res['media-endpoint'];
-      micropub
-        .postMedia(file)
-        .then(url => {
-          // Do something with the file url here
-        })
-        .catch(err => console.log(err));
-    }
-  })
-  .catch(err => console.log(err));
+const { mediaEndpoint: 'media-endpoint' } = await micropub.query('config')
+if (mediaEndpoint) {
+  micropub.options = { mediaEndpoint };
+  const fileUrl = await micropub.postMedia(file)
+}
 ```
 
 ### Error handling
 
-As of version `1.2.0` error handling is greatly improved.
-
-If there are any errors then the methods will reject with an object:
+If there are any errors then the methods will reject with a `MicropubError` class:
 
 ```js
 {
@@ -303,6 +224,40 @@ If there are any errors then the methods will reject with an object:
 Generally if there is a `status` code that means the micropub endpoint returned an http error.
 And if there is `error` then there was an error sending the request at your end.
 This might not be 100% accurate as there are a lot of potential errors.
+
+### Client side useage
+
+Although this library is intended to be usable client side you will likely run into [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) issues so be careful about that.
+
+If you really need to use micropub client side you have a couple of options:
+1. If it's just for your own website, then setup all your services to allow cross-origin requests
+2. If you expect others to use your micropub client you can setup a CORs proxy and extend the `Micropub` class to use the proxy:
+    ```js
+    class MicropubWithCorsProxy extends Micropub {
+      constructor(options) {
+        super(options)
+      }
+
+      getFetchUrl(url) {
+        url = super.getFetchUrl(url)
+        return `https://mycorsproxy.com/?${encodeURIComponent(url)}`
+      }
+    }
+    ```
+
+## Breaking Changes
+
+### v2
+
+The v2 version is a complete rewrite using typescript and native JavaScript fetch (instead of the axios library).
+
+Usage of the library is very similar to the previous version with a couple of breaking changes:
+
+- **Setting options**: In v2 there is an options setter, so instead of manually setting each property `micropub.options.token="token"` you must set it as an object eg. `micropub.options = { token: "token" }`. This is additive, it will not unset other options.
+- **Return types**: In v2 the `create` method would return `true` if it was successful, but could not retrieve a url, now it will return an empty string.
+- **Error class**: Instead of a error object, thrown errors are now a simple `MicropubError` objects which extend the default `Error`.
+- **Media handling**: Media uploads are slightly changed to accept native `File` or `Buffer` objects (`File` is reccomended if possible.
+- **Node.js version**: Version 20+ is required now.
 
 ## Thanks
 

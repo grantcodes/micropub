@@ -1,0 +1,48 @@
+name: Create Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        name: Create release PR
+        with:
+          release-type: node
+
+      - uses: actions/checkout@v3
+        name: Checkout code
+        if: ${{ steps.release.outputs.release_created }}
+
+      - uses: actions/setup-node@v3
+        name: Setup node
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+        if: ${{ steps.release.outputs.release_created }}
+
+      - run: npm ci
+        name: Install dependencies
+        if: ${{ steps.release.outputs.release_created }}
+
+      - run: npm test
+        name: Run tests
+        if: ${{ steps.release.outputs.release_created }}
+
+      - run: npm run build
+        name: Run build
+        if: ${{ steps.release.outputs.release_created }}
+
+      - run: npm publish
+        name: Publish to NPM
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        if: ${{ steps.release.outputs.release_created }}

@@ -1,2 +1,12 @@
-node_modules
+.idea/*
+.nyc_output
 dist
+node_modules
+test
+src/**.js
+coverage
+*.log
+yarn.lock
+coverage
+.husky
+tmp

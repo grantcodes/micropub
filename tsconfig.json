@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "outDir": "dist",
+    "moduleResolution": "Node",
+    "module": "ESNext",
+    "lib": ["dom", "DOM.Iterable", "esnext"],
+    "esModuleInterop": true,
+    "strict": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "typeRoots": ["node_modules/@types", "src/types"],
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["src"],
+  "exclude": ["**/node_modules", "**/.*/"]
+}
