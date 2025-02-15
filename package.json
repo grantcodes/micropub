@@ -2,7 +2,10 @@
 	"name": "micropub-helper",
 	"version": "2.0.0-beta01",
 	"description": "A simple helper class for creating micropub clients",
-	"keywords": ["micropub", "indieweb"],
+	"keywords": [
+		"micropub",
+		"indieweb"
+	],
 	"type": "module",
 	"main": "./dist/main.cjs",
 	"module": "./dist/main.js",
@@ -51,5 +54,11 @@
 		"typescript": "^5.7.3",
 		"@biomejs/biome": "1.9.4"
 	},
-	"files": ["dist/**/*", "!**/*.test.*", "CHANGELOG.md", "LICENSE", "README.md"]
+	"files": [
+		"dist/**/*",
+		"!**/*.test.*",
+		"CHANGELOG.md",
+		"LICENSE",
+		"README.md"
+	]
 }
