@@ -34,8 +34,7 @@
 		"test": "run-s test:lint test:build test:unit",
 		"test:build": "tsup --env.TEST=yes",
 		"test:lint": "npx @biomejs/biome lint src",
-		"test:unit": "node --test",
-		"test-server": "tsup --env.TEST=yes --watch --onSuccess 'node ./tmp/tests/tests/_server/run.js'"
+		"test:unit": "node --test"
 	},
 	"prettier": {
 		"singleQuote": true,
