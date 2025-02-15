@@ -5,7 +5,6 @@ import { objectToFormData } from "../../lib/object-to-form-data.js";
 
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
-// TODO: These tests aren't really that great, they don't check what is contained in the FormData response.
 describe("objectToFormData", () => {
 	it("Basic form data", () => {
 		const params = {
@@ -15,6 +14,9 @@ describe("objectToFormData", () => {
 		};
 		const res = objectToFormData(params);
 		assert.ok(res instanceof FormData);
+		assert.equal(res.get("longString"), params.longString);
+		assert.equal(res.get("number"), params.number.toString());
+		assert.deepEqual(res.getAll("array[]"), params.array);
 	});
 
 	it("Add to existing form data", () => {
@@ -27,16 +29,9 @@ describe("objectToFormData", () => {
 		};
 		const res = objectToFormData(params, existing);
 		assert.ok(res instanceof FormData);
-	});
-
-	it("Add to existing with a custom name", () => {
-		const existing = new FormData();
-		const params = {
-			array: ["foo", "bar"],
-			number: 202,
-			longString: "This is a long string :)",
-		};
-		const res = objectToFormData(params, existing, "keyname");
-		assert.ok(res instanceof FormData);
+		assert.equal(res.get("longString"), params.longString);
+		assert.equal(res.get("number"), params.number.toString());
+		assert.deepEqual(res.getAll("array[]"), params.array);
+		assert.equal(res.get("existing"), "exists");
 	});
 });

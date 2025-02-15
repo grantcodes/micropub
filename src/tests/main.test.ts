@@ -118,7 +118,6 @@ describe("Micropub", () => {
 		assert.equal(endpoints.micropub, fullOptions.micropubEndpoint);
 	});
 
-	// TODO: Test returning non json and test returning invalid response.
 	it("Get token", async () => {
 		mock.method(global, "fetch", () => ({
 			status: 200,

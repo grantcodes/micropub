@@ -7,14 +7,10 @@ export interface ObjectToFormDataData {
 function objectToFormData(
 	object: ObjectToFormDataData,
 	formData: FormData = new FormData(),
-	name: string | null = null,
 ): FormData {
 	let updatedFormData = formData;
-	for (let key in object) {
+	for (const key in object) {
 		const data = object[key];
-		if (name !== null && name !== "") {
-			key = `${name}[${key}]`;
-		}
 		if (Array.isArray(data)) {
 			for (const arrayItem of data) {
 				const arrayData: ObjectToFormDataData = {};
