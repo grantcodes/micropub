@@ -199,7 +199,7 @@ See [https://www.w3.org/TR/micropub/#update](https://www.w3.org/TR/micropub/#upd
 
 In order to post to the media endpoint you must first discover it by querying the micropub endpoint. Then you can set the `mediaEndpoint` option and use the `postMedia` method to send a media file.
 
-The file should either be passed as a `File` object using frontend JavaScript or a readable stream using node.
+The file should either be passed as a `File` or `Blob` object.
 
 ```js
 const { mediaEndpoint: 'media-endpoint' } = await micropub.query('config')
