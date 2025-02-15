@@ -53,18 +53,39 @@ describe("Micropub", () => {
 
 	it("Check required options function", () => {
 		const micropub = new Micropub();
-		micropub.options = { foo: "bar" };
 
 		try {
-			micropub.checkRequiredOptions(["bar"]);
+			micropub.options = { foo: "bar" };
 		} catch (err: unknown) {
 			assert.ok(err instanceof MicropubError);
 			assert.equal(err.error, null);
-			assert.equal(err.message, "Missing required options: bar");
+			assert.equal(err.message, "Unknown option: foo");
 			assert.equal(err.status, null);
 		}
 
-		assert.ok(micropub.checkRequiredOptions(["foo"]));
+		micropub.options = { state: "bar" };
+
+
+
+		try {
+			micropub.checkRequiredOptions(["me"]);
+		} catch (err: unknown) {
+			assert.ok(err instanceof MicropubError);
+			assert.equal(err.error, null);
+			assert.equal(err.message, "Missing required options: me");
+			assert.equal(err.status, null);
+		}
+
+		assert.ok(micropub.checkRequiredOptions(["state"]));
+
+		try {
+			micropub.options = { me: "bar" };
+		} catch (err: unknown) {
+			assert.ok(err instanceof MicropubError);
+			assert.equal(err.error, null);
+			assert.equal(err.message, "Attempted to set me option with an invalid URL");
+			assert.equal(err.status, null);
+		}
 	});
 
 	it("Get endpoints from url html", async () => {

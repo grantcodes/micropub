@@ -16,7 +16,6 @@ import type {
 } from "./micropub.js";
 
 interface MicropubOptions {
-	[key: string]: string | undefined;
 	me: string;
 	scope: string;
 	token: string;
@@ -29,7 +28,22 @@ interface MicropubOptions {
 	redirectUri?: string;
 }
 
-const defaultSettings: MicropubOptions = {
+type MicropubOptionsKey = keyof MicropubOptions;
+
+const OPTIONS_KEYS: MicropubOptionsKey[] = [
+	"me",
+	"scope",
+	"token",
+	"authEndpoint",
+	"tokenEndpoint",
+	"micropubEndpoint",
+	"mediaEndpoint",
+	"state",
+	"clientId",
+	"redirectUri",
+]
+
+const DEFAULT_SETTINGS: MicropubOptions = {
 	me: "",
 	scope: "create delete update",
 	token: "",
@@ -57,14 +71,14 @@ type MicropubPostCreateFormat = "json" | "form" | "multipart";
  * A micropub helper class
  */
 class Micropub {
-	#options: MicropubOptions = defaultSettings;
+	#options: MicropubOptions = DEFAULT_SETTINGS;
 
 	/**
 	 * Micropub class constructor
 	 * @param {object} userSettings Settings supplied for this micropub client
 	 */
 	constructor(userSettings: Partial<MicropubOptions> = {}) {
-		this.options = { ...defaultSettings, ...userSettings };
+		this.options = { ...DEFAULT_SETTINGS, ...userSettings };
 	}
 
 	/**
@@ -72,6 +86,24 @@ class Micropub {
 	 * @param options Object of options to set.
 	 */
 	set options(options: Partial<MicropubOptions>) {
+
+		for (const key in options) {
+			if (!OPTIONS_KEYS.includes(key as MicropubOptionsKey)) {
+				throw new MicropubError(`Unknown option: ${key}`);
+			}
+		}
+
+		const urlOptions: MicropubOptionsKey[] = ["me", "authEndpoint", "tokenEndpoint", "micropubEndpoint", "mediaEndpoint"];
+		for (const key of urlOptions) {
+			if (options[key]) {
+				try {
+					new URL(options[key]);
+				} catch (err) {
+					throw new MicropubError(`Attempted to set ${key} option with an invalid URL`);
+				}
+			}
+		}
+
 		this.#options = { ...this.#options, ...options };
 	}
 
@@ -89,10 +121,11 @@ class Micropub {
 	 * @throws {MicropubError} If any of the options are missing
 	 * @return {true}
 	 */
-	private checkRequiredOptions(requirements: string[]): true {
+	private checkRequiredOptions(requirements: MicropubOptionsKey[]): true {
 		const missing = [];
+		const options = this.options
 		for (const optionName of requirements) {
-			const option = this.#options[optionName];
+			const option = options[optionName];
 			if (!option) {
 				missing.push(optionName);
 			}
