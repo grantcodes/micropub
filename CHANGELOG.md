@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.0.0](https://github.com/grantcodes/micropub/compare/v2.0.0...v3.0.0) (2025-02-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* Minimum node version updated. Option getter and setters.
+
+### Features
+
+* add improved validation to options ([039b6d8](https://github.com/grantcodes/micropub/commit/039b6d890115cdd0333e6b32adeba1810c2f006e))
+
+
+### Bug Fixes
+
+* fix exports ([40ceaed](https://github.com/grantcodes/micropub/commit/40ceaed6fb65bfe35d83d9d757c2bd79f2fc1cc9))
+* ignore any in micropub types ([2d82d84](https://github.com/grantcodes/micropub/commit/2d82d843ec8ae23b9a957feb88dc205307ba41f1))
+* **tests:** fix tests after refactor ([03950e9](https://github.com/grantcodes/micropub/commit/03950e9c6c5883a20bb595ab91913f929dacac98))
+
+
+### Code Refactoring
+
+* update dependencies and refactor typescript ([f568c91](https://github.com/grantcodes/micropub/commit/f568c91a2154715dc4f30c9e8d7b3a3f97e84ef4))
+
 ## [2.0.0](https://github.com/grantcodes/micropub/compare/v2.0.0-beta01...v2.0.0) (2025-02-15)
 
 
