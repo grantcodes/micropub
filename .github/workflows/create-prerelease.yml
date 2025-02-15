@@ -16,6 +16,7 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@v4
         name: Create release PR
+        id: release
         with:
           config-file: prerelease-please-config.json
           target-branch: ${{ github.ref_name }}
