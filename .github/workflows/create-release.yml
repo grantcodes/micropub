@@ -15,6 +15,7 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@v4
         name: Create release PR
+        id: release
         with:
           release-type: node
 
