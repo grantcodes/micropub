@@ -158,6 +158,35 @@ describe("Micropub", () => {
 		assert.equal(parsedUrl.searchParams.get("scope"), "create delete update");
 	});
 
+	it("Get auth endpoint with PKCE", async () => {
+				mock.method(global, "fetch", () => ({
+			status: 200,
+			text: () => serverData.pageHtml,
+			headers: new Headers({ "Content-Type": "text/html" }),
+		}));
+		const micropub = new Micropub(baseOptions);
+		const authUrlRes = await micropub.getAuthUrlPkce();
+		
+		assert.ok(authUrlRes.url)
+		assert.ok(authUrlRes.codeVerifier)
+
+		const parsedUrl = new URL(authUrlRes.url);
+
+		assert.equal(parsedUrl.host, "localhost:3313");
+		assert.equal(parsedUrl.pathname, "/auth");
+		assert.equal(parsedUrl.searchParams.get("me"), baseOptions.me);
+		assert.equal(parsedUrl.searchParams.get("client_id"), baseOptions.clientId);
+		assert.equal(
+			parsedUrl.searchParams.get("redirect_uri"),
+			baseOptions.redirectUri,
+		);
+		assert.equal(parsedUrl.searchParams.get("state"), baseOptions.state);
+		assert.equal(parsedUrl.searchParams.get("response_type"), "code");
+		assert.equal(parsedUrl.searchParams.get("scope"), "create delete update");
+		assert.equal(parsedUrl.searchParams.get("code_challenge_method"), "S256");
+		assert.ok(parsedUrl.searchParams.get("code_challenge"))
+	})
+
 	it("Verify token", async () => {
 		mock.method(global, "fetch", () => ({
 			status: 200,

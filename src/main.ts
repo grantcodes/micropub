@@ -14,6 +14,7 @@ import type {
 	MicropubConfigQueryResponse,
 	MicropubUpdateActionRequest,
 } from "./micropub.js";
+import { generatePkceParameters } from "./lib/pkce.js";
 
 interface MicropubOptions {
 	me: string;
@@ -42,6 +43,11 @@ const OPTIONS_KEYS: MicropubOptionsKey[] = [
 	"clientId",
 	"redirectUri",
 ];
+
+interface PkceEnabledAuthUrl {
+	url: string,
+	codeVerifier: string
+}
 
 const DEFAULT_SETTINGS: MicropubOptions = {
 	me: "",
@@ -256,11 +262,12 @@ class Micropub {
 	/**
 	 * Exchanges a code for an access token
 	 * @param {string} code A code received from the auth endpoint
+	 * @param {string?} codeVerifier The code verifier for PKCE (if using PKCE); default undefined
 	 * @throws {MicropubError} If the token request fails
 	 * @return {Promise<string>} Promise which resolves with the access token on success
 	 */
 	// @ts-expect-error - Error handling in a separate function
-	async getToken(code: string): Promise<string> {
+	async getToken(code: string, codeVerifier?: string): Promise<string> {
 		this.checkRequiredOptions([
 			"me",
 			"clientId",
@@ -277,6 +284,7 @@ class Micropub {
 				code,
 				client_id: clientId,
 				redirect_uri: redirectUri,
+				code_verifier: codeVerifier
 			};
 
 			const res = await this.fetch({
@@ -347,6 +355,28 @@ class Micropub {
 			return appendQueryString(authEndpoint, authParams as QueryVars);
 		} catch (err) {
 			this.handleError(err, "Error getting auth url");
+		}
+	}
+
+	/**
+	 * Get the authentication url based on the set options; generates random parameters for
+	 * PKCE (Proof-Key for Code Exchange) and attaches them to the URL. See {@link getAuthUrl}.
+	 *
+	 * @throws {MicropubError} If the options are not set
+	 * @return {Promise<string>} The authentication url or false on missing options
+	 */
+	async getAuthUrlPkce(): Promise<PkceEnabledAuthUrl> {
+		const url = await this.getAuthUrl();
+
+		const params = await generatePkceParameters();
+		const pkceParams = {
+			code_challenge: params.codeChallenge,
+			code_challenge_method: "S256",
+		};
+
+		return {
+			url: appendQueryString(url, pkceParams),
+			codeVerifier: params.codeVerifier
 		}
 	}
 
