@@ -1,5 +1,5 @@
 import { TextEncoder } from "node:util";
-import { stringToBase64URL } from "./base64url";
+import { base64UrlEncode } from "./base64url";
 
 export interface PkceParameters {
 	codeVerifier: string;
@@ -15,28 +15,18 @@ export interface PkceParameters {
  */
 export async function generatePkceParameters(): Promise<PkceParameters> {
 	// Generate 32 random bytes
-	const randomBytes = new Uint8Array(32);
-	crypto.getRandomValues(randomBytes);
+	const randomBytes = new Uint8Array(32)
+	crypto.getRandomValues(randomBytes)
 
 	// Convert raw bytes to string and encode with base64url
-	let verifier = "";
-	for (const byte of randomBytes) {
-		verifier += String.fromCharCode(byte);
-	}
+	const verifier = base64UrlEncode(randomBytes)
 
-	verifier = stringToBase64URL(verifier);
-
-	// Encode verifier as utf8, then digest with sha256. Convert sha256
-	// bytes to string and encode with base64url as before
-	const utf8 = new Uint8Array(new TextEncoder().encode(verifier)); // wrapping required for TS
-	const digest = await crypto.subtle.digest("SHA-256", utf8);
-
-	let challenge = "";
-	for (const byte of new Uint8Array(digest)) {
-		challenge += String.fromCharCode(byte);
-	}
-
-	challenge = stringToBase64URL(challenge);
+	// Encode verifier as utf8, then digest with sha256. 
+	// Convert sha256 bytes to string and encode with base64url to create challenge
+	const encoder = new TextEncoder()
+	const data = encoder.encode(verifier)
+	const digest = await crypto.subtle.digest("SHA-256", data)
+	const challenge = base64UrlEncode(new Uint8Array(digest))
 
 	// Return generated parameters
 	return {

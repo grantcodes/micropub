@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import { generatePkceParameters } from "../../lib/pkce";
 import assert from "node:assert";
-import { stringToBase64URL } from "../../lib/base64url";
+import { base64UrlEncode } from "../../lib/base64url";
 
 describe("generatePkceParameters", () => {
 	it("Generates correct parameters", async () => {
@@ -28,12 +28,7 @@ describe("generatePkceParameters", () => {
 			new Uint8Array(new TextEncoder().encode(params.codeVerifier)),
 		);
 
-		let expectChallenge = "";
-		for (const byte of new Uint8Array(digest)) {
-			expectChallenge += String.fromCharCode(byte);
-		}
-
-		expectChallenge = stringToBase64URL(expectChallenge);
+		const expectChallenge = base64UrlEncode(new Uint8Array(digest))
 		assert.strictEqual(params.codeChallenge, expectChallenge);
 	});
 
