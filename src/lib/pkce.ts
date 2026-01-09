@@ -1,4 +1,3 @@
-import { TextEncoder } from "node:util";
 import { base64UrlEncode } from "./base64url";
 
 export interface PkceParameters {
