@@ -1,6 +1,6 @@
-import { it, describe, mock, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { afterEach, describe, it, mock } from "node:test";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { data as serverData } from "./_data/data.js";
@@ -65,8 +65,6 @@ describe("Micropub", () => {
 
 		micropub.options = { state: "bar" };
 
-
-
 		try {
 			micropub.checkRequiredOptions(["me"]);
 		} catch (err: unknown) {
@@ -83,7 +81,10 @@ describe("Micropub", () => {
 		} catch (err: unknown) {
 			assert.ok(err instanceof MicropubError);
 			assert.equal(err.error, null);
-			assert.equal(err.message, "Attempted to set me option with an invalid URL");
+			assert.equal(
+				err.message,
+				"Attempted to set me option with an invalid URL",
+			);
 			assert.equal(err.status, null);
 		}
 	});

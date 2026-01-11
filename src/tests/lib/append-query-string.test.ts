@@ -1,5 +1,5 @@
-import { it, describe } from "node:test";
 import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { appendQueryString } from "../../lib/append-query-string.js";
 
 /* eslint-disable @typescript-eslint/no-floating-promises */

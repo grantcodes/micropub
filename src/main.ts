@@ -41,7 +41,7 @@ const OPTIONS_KEYS: MicropubOptionsKey[] = [
 	"state",
 	"clientId",
 	"redirectUri",
-]
+];
 
 const DEFAULT_SETTINGS: MicropubOptions = {
 	me: "",
@@ -86,20 +86,27 @@ class Micropub {
 	 * @param options Object of options to set.
 	 */
 	set options(options: Partial<MicropubOptions>) {
-
 		for (const key in options) {
 			if (!OPTIONS_KEYS.includes(key as MicropubOptionsKey)) {
 				throw new MicropubError(`Unknown option: ${key}`);
 			}
 		}
 
-		const urlOptions: MicropubOptionsKey[] = ["me", "authEndpoint", "tokenEndpoint", "micropubEndpoint", "mediaEndpoint"];
+		const urlOptions: MicropubOptionsKey[] = [
+			"me",
+			"authEndpoint",
+			"tokenEndpoint",
+			"micropubEndpoint",
+			"mediaEndpoint",
+		];
 		for (const key of urlOptions) {
 			if (options[key]) {
 				try {
 					new URL(options[key]);
-				} catch (err) {
-					throw new MicropubError(`Attempted to set ${key} option with an invalid URL`);
+				} catch (_err) {
+					throw new MicropubError(
+						`Attempted to set ${key} option with an invalid URL`,
+					);
 				}
 			}
 		}
@@ -123,7 +130,7 @@ class Micropub {
 	 */
 	private checkRequiredOptions(requirements: MicropubOptionsKey[]): true {
 		const missing = [];
-		const options = this.options
+		const options = this.options;
 		for (const optionName of requirements) {
 			const option = options[optionName];
 			if (!option) {
