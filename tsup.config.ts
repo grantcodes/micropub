@@ -5,9 +5,10 @@ export default defineConfig(options => {
     return {
       outDir: 'tmp/tests',
       entry: ['src', "!src/tests/_server/static/**/*"],
-      external: ['express', 'multer', 'node:url', 'node:path', 'node:fs'],
+      external: ['express', 'multer', 'node:url', 'node:path', 'node:fs', 'node:test', 'node:assert/strict'],
       format: ['esm'],
-      publicDir: 'src/tests/_server/static'
+      publicDir: 'src/tests/_server/static',
+      removeNodeProtocol: false
     }
   } else {
     return {

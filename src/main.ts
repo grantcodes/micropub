@@ -103,7 +103,7 @@ class Micropub {
 			if (options[key]) {
 				try {
 					new URL(options[key]);
-				} catch (err) {
+				} catch (_err) {
 					throw new MicropubError(
 						`Attempted to set ${key} option with an invalid URL`,
 					);

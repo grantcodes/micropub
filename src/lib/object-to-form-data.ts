@@ -18,7 +18,7 @@ function objectToFormData(
 				updatedFormData = objectToFormData(arrayData, updatedFormData);
 			}
 		} else {
-			// @ts-ignore - FormData.append automatically converts booleans and numbers to strings
+			// @ts-expect-error - FormData.append automatically converts booleans and numbers to strings
 			updatedFormData.append(key, data);
 		}
 	}

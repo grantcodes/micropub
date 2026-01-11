@@ -1,6 +1,6 @@
-import { it, describe, mock, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { afterEach, describe, it, mock } from "node:test";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { data as serverData } from "./_data/data.js";
