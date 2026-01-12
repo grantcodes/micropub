@@ -27,6 +27,7 @@ interface MicropubOptions {
 	state?: string;
 	clientId?: string;
 	redirectUri?: string;
+	codeVerifier?: string;
 }
 
 type MicropubOptionsKey = keyof MicropubOptions;
@@ -42,12 +43,8 @@ const OPTIONS_KEYS: MicropubOptionsKey[] = [
 	"state",
 	"clientId",
 	"redirectUri",
+	"codeVerifier",
 ];
-
-interface PkceEnabledAuthUrl {
-	url: string,
-	codeVerifier: string
-}
 
 const DEFAULT_SETTINGS: MicropubOptions = {
 	me: "",
@@ -56,6 +53,7 @@ const DEFAULT_SETTINGS: MicropubOptions = {
 	authEndpoint: "",
 	tokenEndpoint: "",
 	micropubEndpoint: "",
+	codeVerifier: undefined,
 };
 
 interface MicropubRequestInit extends RequestInit {
@@ -262,12 +260,11 @@ class Micropub {
 	/**
 	 * Exchanges a code for an access token
 	 * @param {string} code A code received from the auth endpoint
-	 * @param {string?} codeVerifier The code verifier for PKCE (if using PKCE); default undefined
 	 * @throws {MicropubError} If the token request fails
 	 * @return {Promise<string>} Promise which resolves with the access token on success
 	 */
 	// @ts-expect-error - Error handling in a separate function
-	async getToken(code: string, codeVerifier?: string): Promise<string> {
+	async getToken(code: string): Promise<string> {
 		this.checkRequiredOptions([
 			"me",
 			"clientId",
@@ -275,7 +272,7 @@ class Micropub {
 			"tokenEndpoint",
 		]);
 
-		const { me, clientId, redirectUri, tokenEndpoint } = this.options;
+		const { me, clientId, redirectUri, tokenEndpoint, codeVerifier } = this.options;
 
 		try {
 			const data = {
@@ -322,11 +319,12 @@ class Micropub {
 
 	/**
 	 * Get the authentication url based on the set options
+	 * @param {boolean} usePkce Whether to use PKCE. If using PKCE, a code challenge is added to the auth URL. Default true.
 	 * @throws {MicropubError} If the options are not set
 	 * @return {Promise<string>} The authentication url or false on missing options
 	 */
 	// @ts-expect-error - Error handling in a separate function
-	async getAuthUrl(): Promise<string> {
+	async getAuthUrl(usePkce: boolean = true): Promise<string> {
 		this.checkRequiredOptions(["me", "state"]);
 		try {
 			const { me } = this.options;
@@ -343,7 +341,7 @@ class Micropub {
 			const { clientId, redirectUri, scope, state, authEndpoint } =
 				this.options;
 
-			const authParams = {
+			const authParams: Record<string, unknown> = {
 				me,
 				client_id: clientId,
 				redirect_uri: redirectUri,
@@ -352,31 +350,16 @@ class Micropub {
 				state,
 			};
 
+			if (usePkce) {
+				const { codeChallenge, codeVerifier } = await generatePkceParameters();
+				authParams.code_challenge = codeChallenge
+				authParams.code_challenge_method = "S256"
+				this.options.codeVerifier = codeVerifier
+			}
+
 			return appendQueryString(authEndpoint, authParams as QueryVars);
 		} catch (err) {
 			this.handleError(err, "Error getting auth url");
-		}
-	}
-
-	/**
-	 * Get the authentication url based on the set options; generates random parameters for
-	 * PKCE (Proof-Key for Code Exchange) and attaches them to the URL. See {@link getAuthUrl}.
-	 *
-	 * @throws {MicropubError} If the options are not set
-	 * @return {Promise<string>} The authentication url or false on missing options
-	 */
-	async getAuthUrlPkce(): Promise<PkceEnabledAuthUrl> {
-		const url = await this.getAuthUrl();
-
-		const params = await generatePkceParameters();
-		const pkceParams = {
-			code_challenge: params.codeChallenge,
-			code_challenge_method: "S256",
-		};
-
-		return {
-			url: appendQueryString(url, pkceParams),
-			codeVerifier: params.codeVerifier
 		}
 	}
 
