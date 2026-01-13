@@ -354,7 +354,7 @@ class Micropub {
 				const { codeChallenge, codeVerifier } = await generatePkceParameters();
 				authParams.code_challenge = codeChallenge
 				authParams.code_challenge_method = "S256"
-				this.options.codeVerifier = codeVerifier
+				this.options = { codeVerifier }
 			}
 
 			return appendQueryString(authEndpoint, authParams as QueryVars);
