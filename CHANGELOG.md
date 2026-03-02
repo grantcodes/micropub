@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.2](https://github.com/grantcodes/micropub/compare/v2.0.1...v2.0.2) (2026-03-02)
+
+
+### Bug Fixes
+
+* change test file loading ([550cacd](https://github.com/grantcodes/micropub/commit/550cacd2f0fbc8d9242402912cc1491f80e87b23))
+* test files not found ([8c917ad](https://github.com/grantcodes/micropub/commit/8c917ad9c6f7d316c25e789e1de8292e8d2b103c))
+
 ## [2.0.1](https://github.com/grantcodes/micropub/compare/v2.0.0...v2.0.1) (2025-02-15)
 
 
