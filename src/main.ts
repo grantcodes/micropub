@@ -14,6 +14,7 @@ import type {
 	MicropubConfigQueryResponse,
 	MicropubUpdateActionRequest,
 } from "./micropub.js";
+import { generatePkceParameters } from "./lib/pkce.js";
 
 interface MicropubOptions {
 	me: string;
@@ -26,6 +27,7 @@ interface MicropubOptions {
 	state?: string;
 	clientId?: string;
 	redirectUri?: string;
+	codeVerifier?: string;
 }
 
 type MicropubOptionsKey = keyof MicropubOptions;
@@ -41,6 +43,7 @@ const OPTIONS_KEYS: MicropubOptionsKey[] = [
 	"state",
 	"clientId",
 	"redirectUri",
+	"codeVerifier",
 ];
 
 const DEFAULT_SETTINGS: MicropubOptions = {
@@ -50,6 +53,7 @@ const DEFAULT_SETTINGS: MicropubOptions = {
 	authEndpoint: "",
 	tokenEndpoint: "",
 	micropubEndpoint: "",
+	codeVerifier: undefined,
 };
 
 interface MicropubRequestInit extends RequestInit {
@@ -268,7 +272,7 @@ class Micropub {
 			"tokenEndpoint",
 		]);
 
-		const { me, clientId, redirectUri, tokenEndpoint } = this.options;
+		const { me, clientId, redirectUri, tokenEndpoint, codeVerifier } = this.options;
 
 		try {
 			const data = {
@@ -277,6 +281,7 @@ class Micropub {
 				code,
 				client_id: clientId,
 				redirect_uri: redirectUri,
+				code_verifier: codeVerifier
 			};
 
 			const res = await this.fetch({
@@ -314,11 +319,12 @@ class Micropub {
 
 	/**
 	 * Get the authentication url based on the set options
+	 * @param {boolean} usePkce Whether to use PKCE. If using PKCE, a code challenge is added to the auth URL. Default true.
 	 * @throws {MicropubError} If the options are not set
 	 * @return {Promise<string>} The authentication url or false on missing options
 	 */
 	// @ts-expect-error - Error handling in a separate function
-	async getAuthUrl(): Promise<string> {
+	async getAuthUrl(usePkce: boolean = true): Promise<string> {
 		this.checkRequiredOptions(["me", "state"]);
 		try {
 			const { me } = this.options;
@@ -335,7 +341,7 @@ class Micropub {
 			const { clientId, redirectUri, scope, state, authEndpoint } =
 				this.options;
 
-			const authParams = {
+			const authParams: Record<string, unknown> = {
 				me,
 				client_id: clientId,
 				redirect_uri: redirectUri,
@@ -343,6 +349,13 @@ class Micropub {
 				scope,
 				state,
 			};
+
+			if (usePkce) {
+				const { codeChallenge, codeVerifier } = await generatePkceParameters();
+				authParams.code_challenge = codeChallenge
+				authParams.code_challenge_method = "S256"
+				this.options = { codeVerifier }
+			}
 
 			return appendQueryString(authEndpoint, authParams as QueryVars);
 		} catch (err) {
