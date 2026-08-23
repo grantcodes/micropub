@@ -195,6 +195,11 @@ class Micropub {
 		const timer = setTimeout(() => controller.abort(), timeout);
 		request.signal = controller.signal;
 
+    // Omit credentials: micropub does not support cookie authentication, 
+    // the token instead goes through the Authorization header or as a 
+    // form-body parameter.
+    request.credentials = 'omit';
+
 		// Add authorization header if a token is set
 		if (token) {
 			request.headers.set("Authorization", `Bearer ${token}`);
