@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.1](https://github.com/grantcodes/micropub/compare/v2.1.0...v2.1.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* omit credentials from micropub requests ([41ca647](https://github.com/grantcodes/micropub/commit/41ca647668fd01618e17c2a5a63d86db5c76b548))
+* omit credentials from micropub requests ([149af11](https://github.com/grantcodes/micropub/commit/149af11ff65581d9f9830fab4507fb694d8dbc87))
+
 ## [2.1.0](https://github.com/grantcodes/micropub/compare/v2.0.1...v2.1.0) (2026-04-22)
 
 
